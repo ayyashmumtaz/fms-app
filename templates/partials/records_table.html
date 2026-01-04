@@ -1,0 +1,32 @@
+{{ define "partials/records_table.html" }}
+<h2>Records Periode: <span class="pill">{{ .Periode }}</span></h2>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Tanggal</th>
+      <th>Periode</th>
+      <th>Kategori</th>
+      <th class="right">Nilai</th>
+      <th class="right">Aksi</th>
+    </tr>
+  </thead>
+
+  <tbody id="records-tbody">
+    {{ if not .Records }}
+      <tr>
+        <td colspan="6" class="muted">Belum ada records.</td>
+      </tr>
+    {{ else }}
+      {{ range .Records }}
+        {{ template "partials/record_row.html" (dict "Record" .) }}
+      {{ end }}
+    {{ end }}
+  </tbody>
+</table>
+
+<div class="hint muted">
+  <small>Tip: Input form di atas otomatis nambah row baru ke tabel (append).</small>
+</div>
+{{ end }}

@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="id">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Project Settings - FMS</title>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <script src="/static/toast.js"></script>
+    <link rel="stylesheet" href="/static/styles.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .sidebar-link {
+            display: block;
+            padding: 0.75rem 1rem;
+            color: var(--slate-600);
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .sidebar-link:hover:not(.disabled) {
+            background-color: var(--slate-50);
+            color: var(--slate-900);
+        }
+
+        .sidebar-link.active {
+            background-color: var(--primary-50);
+            color: var(--primary-700);
+            font-weight: 600;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Navigation -->
+        <!-- Navigation -->
+        {{ template "header.html" . }}
+
+        <header class="app-header">
+            <div class="header-brand">
+                <h1>⚙️ Settings</h1>
+                <p>Pusat konfigurasi sistem aplikasi FMS</p>
+            </div>
+        </header>
+
+        <!-- Layout Grid -->
+        <div style="display: grid; grid-template-columns: 240px 1fr; gap: 2rem; align-items: start;">
+
+            <!-- Sidebar -->
+            {{ template "sidebar.html" . }}
+
+            <!-- Main Content -->
+            <main>
+                <!-- SECTION: PROJECT CODES -->
+                <div class="card" style="margin-bottom: 2rem;">
+                    <div style="border-bottom: 1px solid var(--slate-100); padding-bottom: 1rem; margin-bottom: 1rem;">
+                        <h3 class="card-title" style="margin: 0;">Project Codes</h3>
+                        <p style="color: var(--slate-500); font-size: 13px; margin-top: 0.25rem;">Kelola kode proyek
+                            untuk digunakan dalam pelaporan.</p>
+                    </div>
+
+                    <!-- Add Project Form -->
+                    <form action="/settings/projects" method="POST" class="form-grid"
+                        style="grid-template-columns: 120px 1fr auto; align-items: end; background: var(--slate-50); padding: 1rem; border-radius: 8px; border: 1px dashed var(--slate-300); margin-bottom: 1.5rem;">
+                        <div class="form-field">
+                            <label class="form-label required" style="font-size: 12px;">Code</label>
+                            <input type="text" name="code" class="form-input" placeholder="ABC"
+                                style="text-transform: uppercase;" required>
+                        </div>
+                        <div class="form-field">
+                            <label class="form-label required" style="font-size: 12px;">Nama Project</label>
+                            <input type="text" name="name" class="form-input" placeholder="Nama Lengkap Proyek"
+                                required>
+                        </div>
+                        <div class="form-field">
+                            <button type="submit" class="btn btn-primary" style="height: 38px;">+ Tambah</button>
+                        </div>
+                    </form>
+
+                    <!-- Project Table -->
+                    <div class="table-wrapper">
+                        <table class="data-table" style="width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th style="width: 100px;">Code</th>
+                                    <th>Nama Project</th>
+                                    <th style="width: 100px; text-align: center;">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{ range .Projects }}
+                                <tr>
+                                    <td style="font-weight: 600;">{{ .Code }}</td>
+                                    <td>{{ .Name }}</td>
+                                    <td style="text-align: center;">
+                                        {{ if .IsActive }}
+                                        <span class="badge badge-success">Active</span>
+                                        {{ else }}
+                                        <span class="badge badge-error">Inactive</span>
+                                        {{ end }}
+                                    </td>
+                                </tr>
+                                {{ end }}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <footer class="footer" style="margin-top: 3rem;">
+            <small>FMS Device Performance Reporting System &copy; 2025</small>
+        </footer>
+    </div>
+    <script>
+        Toast.init();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="id">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Ship Management - FMS</title>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <script src="/static/toast.js"></script>
+    <link rel="stylesheet" href="/static/styles.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .sidebar-link {
+            display: block;
+            padding: 0.75rem 1rem;
+            color: var(--slate-600);
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .sidebar-link:hover:not(.disabled) {
+            background-color: var(--slate-50);
+            color: var(--slate-900);
+        }
+
+        .sidebar-link.active {
+            background-color: var(--primary-50);
+            color: var(--primary-700);
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Navigation -->
+        <!-- Navigation -->
+        {{ template "header.html" . }}
+
+        <header class="app-header">
+            <div class="header-brand">
+                <h1>⚙️ Settings</h1>
+                <p>Pusat konfigurasi sistem aplikasi FMS</p>
+            </div>
+        </header>
+
+        <!-- Layout Grid -->
+        <div style="display: grid; grid-template-columns: 240px 1fr; gap: 2rem; align-items: start;">
+
+            <!-- Sidebar -->
+            <!-- Sidebar -->
+            {{ template "sidebar.html" . }}
+
+            <!-- Main Content -->
+            <main>
+                <div class="card" style="margin-bottom: 2rem;">
+                    <div style="border-bottom: 1px solid var(--slate-100); padding-bottom: 1rem; margin-bottom: 1rem;">
+                        <h3 class="card-title" style="margin: 0;">Ship Management</h3>
+                        <p style="color: var(--slate-500); font-size: 13px; margin-top: 0.25rem;">Manage fleet and
+                            specific configuration per vessel.</p>
+                    </div>
+
+                    <form action="/settings/ships" method="POST" class="form-grid"
+                        style="grid-template-columns: 1fr auto; align-items: end; background: var(--slate-50); padding: 1rem; border-radius: 8px; border: 1px dashed var(--slate-300);">
+                        <div class="form-field">
+                            <label class="form-label required">New Vessel Name</label>
+                            <input type="text" name="name" class="form-input" placeholder="e.g. TB BINTANG LAUT"
+                                required>
+                        </div>
+                        <div class="form-field">
+                            <button type="submit" class="btn btn-primary" style="height: 42px;">+ Add Ship</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title" style="margin-bottom: 1rem;">📋 Fleet List</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Ship Name</th>
+                                <th style="text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{ range .Ships }}
+                            <tr>
+                                <td style="font-weight: 500;">{{ .Name }}</td>
+                                <td style="text-align: right;">
+                                    <a href="/settings/ships/{{ .ID }}" class="btn btn-secondary"
+                                        style="font-size: 12px; text-decoration: none;">⚙️ Configure Sensors</a>
+                                </td>
+                            </tr>
+                            {{ else }}
+                            <tr>
+                                <td colspan="3" style="text-align: center; color: var(--slate-400);">No ships found.
+                                </td>
+                            </tr>
+                            {{ end }}
+                        </tbody>
+                    </table>
+                </div>
+            </main>
+        </div>
+
+        <footer class="footer" style="margin-top: 3rem;">
+            <small>FMS Device Performance Reporting System &copy; 2025</small>
+        </footer>
+    </div>
+</body>
+
+</html>

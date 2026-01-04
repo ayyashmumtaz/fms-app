@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="id">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Detailed Report - FMS Performance</title>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <link rel="stylesheet" href="/static/styles.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+        <!-- Navigation -->
+        <!-- Navigation -->
+        {{ template "header.html" . }}
+
+        <!-- Header & Filter -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <div>
+                <h1 style="font-size: 24px; font-weight: 700; color: var(--slate-900); margin-bottom: 0.5rem;">Laporan
+                    Bulanan Detail</h1>
+                <p style="color: var(--slate-500);">Menampilkan status setiap perangkat per kapal untuk periode terpilih
+                </p>
+            </div>
+
+            <form action="/report" method="get" class="filter-form"
+                style="display: flex; gap: 1rem; align-items: end; background: white; padding: 1rem; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid var(--slate-200);">
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    <label style="font-size: 12px; font-weight: 600; color: var(--slate-600);">Project Code</label>
+                    <input type="text" name="project" placeholder="FMS" value="FMS" class="form-input"
+                        style="padding: 0.5rem; border: 1px solid var(--slate-300); border-radius: 6px; width: 80px;">
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    <label style="font-size: 12px; font-weight: 600; color: var(--slate-600);">Period
+                        (Month/Year)</label>
+                    <input type="month" name="date" class="form-input" required
+                        style="padding: 0.5rem; border: 1px solid var(--slate-300); border-radius: 6px;">
+                </div>
+                <button type="submit" class="btn btn-primary" style="height: 38px;">Filter &rarr;</button>
+            </form>
+        </div>
+
+        <!-- Report Content -->
+        <div class="card" style="padding: 0; overflow: hidden;">
+            <div
+                style="padding: 1.5rem; border-bottom: 1px solid var(--slate-100); background: #f8fafc; display: flex; justify-content: space-between; align-items: center;">
+                <h2 style="font-size: 16px; font-weight: 600; margin: 0;">Periode: <span
+                        style="color: var(--primary-600);">{{ .Code }}</span></h2>
+                <div class="badge badge-online">{{ len .Reports }} Records Found</div>
+            </div>
+
+            <div style="overflow-x: auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Ship Name</th>
+                            <th>Date</th>
+
+                            <!-- Dynamic Sensor Headers -->
+                            {{ range $.Sensors }}
+                            <th style="text-align: center; white-space: nowrap;">{{ .Name }}</th>
+                            {{ end }}
+
+                            <th style="text-align: center;">Online</th>
+                            <th style="text-align: center;">Offline</th>
+                            <th style="text-align: center;">Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{ range .Reports }}
+                        <tr>
+                            <td class="ship-name-cell">{{ .ShipName }}</td>
+                            <td style="color: var(--slate-500); white-space: nowrap;">{{ .ReportDate.Format "02 Jan" }}
+                            </td>
+
+                            <!-- Dynamic Sensor Cells -->
+                            {{ $report := . }}
+                            {{ range $.Sensors }}
+                            {{ $isOn := lookupSensor $report.SensorsData .Code }}
+                            <td style="text-align: center;">
+                                <span class="badge {{ if $isOn }}badge-online{{ else }}badge-offline{{ end }}">
+                                    {{ if $isOn }}ON{{ else }}OFF{{ end }}
+                                </span>
+                            </td>
+                            {{ end }}
+
+                            <td style="text-align: center; color: var(--success-600); font-weight: 600;">{{ .OnlineTotal
+                                }}</td>
+                            <td style="text-align: center; color: var(--error-600); font-weight: 600;">{{ .OfflineTotal
+                                }}</td>
+                            <td style="text-align: center;">
+                                <span
+                                    class="badge {{ if gt .OnlinePercent 50.0 }}badge-online{{ else }}badge-offline{{ end }}">
+                                    {{ printf "%.0f" .OnlinePercent }}%
+                                </span>
+                            </td>
+                        </tr>
+                        {{ else }}
+                        <tr>
+                            <!-- Colspan estimation -->
+                            <td colspan="15" class="empty-state">
+                                <div class="empty-icon">📭</div>
+                                <div>Belum ada data laporan untuk periode {{ $.Code }}</div>
+                            </td>
+                        </tr>
+                        {{ end }}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer style="text-align: center; padding: 2rem; color: var(--slate-400); font-size: 13px;">
+            <small>FMS Device Performance Reporting System &copy; 2025</small>
+        </footer>
+    </div>
+</body>
+
+</html>

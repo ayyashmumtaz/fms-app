@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="id">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>General Settings - FMS</title>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <script src="/static/toast.js"></script>
+    <link rel="stylesheet" href="/static/styles.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .sidebar-link {
+            display: block;
+            padding: 0.75rem 1rem;
+            color: var(--slate-600);
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .sidebar-link:hover:not(.disabled) {
+            background-color: var(--slate-50);
+            color: var(--slate-900);
+        }
+
+        .sidebar-link.active {
+            background-color: var(--primary-50);
+            color: var(--primary-700);
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Navigation -->
+        {{ template "header.html" . }}
+
+        <header class="app-header">
+            <div class="header-brand">
+                <h1>⚙️ Settings</h1>
+                <p>Pusat konfigurasi sistem aplikasi FMS</p>
+            </div>
+        </header>
+
+        <!-- Layout Grid -->
+        <div style="display: grid; grid-template-columns: 240px 1fr; gap: 2rem; align-items: start;">
+
+            <!-- Sidebar -->
+            {{ template "sidebar.html" . }}
+
+            <!-- Main Content -->
+            <main>
+                <div class="card">
+                    <h3 class="card-title">General Settings</h3>
+                    <p style="color: var(--slate-500); font-size: 13px;">Konfigurasi umum aplikasi.</p>
+
+                    <hr style="border: 0; border-top: 1px solid var(--slate-200); margin: 1.5rem 0;">
+
+                    <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 1rem;">Company Logo</h4>
+
+                    <div style="display: flex; gap: 2rem; align-items: start; flex-wrap: wrap;">
+                        <!-- Current Logo -->
+                        <div style="text-align: center;">
+                            <div
+                                style="width: 150px; height: 150px; background: white; border: 1px solid var(--slate-200); border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 0.5rem; padding: 10px;">
+                                <img src="{{ .Logo }}" alt="Company Logo"
+                                    style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                            </div>
+                            <small style="color: var(--slate-500);">Current Logo</small>
+                        </div>
+
+                        <!-- Upload Form -->
+                        <form action="/settings/logo" method="POST" enctype="multipart/form-data"
+                            style="flex: 1; max-width: 400px; background: var(--slate-50); padding: 1.5rem; border-radius: 8px; border: 1px dashed var(--slate-300);">
+                            <div class="form-field">
+                                <label class="form-label" style="font-weight: 600;">Upload New Logo</label>
+                                <input type="file" name="logo" class="form-input"
+                                    accept="image/png, image/jpeg, image/jpg" required style="background: white;">
+                                <p style="font-size: 12px; color: var(--slate-500); margin-top: 0.5rem;">
+                                    Format: PNG, JPG.<br>Recommended: Transparent background.
+                                </p>
+                            </div>
+                            <div style="margin-top: 1rem;">
+                                <button type="submit" class="btn btn-primary">Update Logo</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <footer class="footer" style="margin-top: 3rem;">
+            <small>FMS Device Performance Reporting System &copy; 2025</small>
+        </footer>
+    </div>
+    <script>
+        Toast.init();
+    </script>
+</body>
+
+</html>

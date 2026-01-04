@@ -1,0 +1,51 @@
+<tr id="report-{{ .ID }}">
+    <td class="text-sm">{{ .Code }}</td>
+    <td class="text-sm">{{ .ReportDate.Format "02 Jan" }}</td>
+    <td class="ship-name">{{ .ShipName }}</td>
+    <td class="status-cell">
+        <span class="status-badge {{ if .DeviceCondition }}online{{ else }}offline{{ end }}">
+            {{ if .DeviceCondition }}ON{{ else }}OFF{{ end }}
+        </span>
+    </td>
+    <td class="status-cell">
+        <span class="status-badge {{ if .GPS }}online{{ else }}offline{{ end }}">
+            {{ if .GPS }}ON{{ else }}OFF{{ end }}
+        </span>
+    </td>
+    <td class="status-cell">
+        <span class="status-badge {{ if .RpmMEPort }}online{{ else }}offline{{ end }}">
+            {{ if .RpmMEPort }}ON{{ else }}OFF{{ end }}
+        </span>
+    </td>
+    <td class="status-cell">
+        <span class="status-badge {{ if .RpmMEStbd }}online{{ else }}offline{{ end }}">
+            {{ if .RpmMEStbd }}ON{{ else }}OFF{{ end }}
+        </span>
+    </td>
+    <td class="status-cell">
+        <span class="status-badge {{ if .FlowmeterInput }}online{{ else }}offline{{ end }}">
+            {{ if .FlowmeterInput }}ON{{ else }}OFF{{ end }}
+        </span>
+    </td>
+    <td class="status-cell">
+        <span class="status-badge {{ if .FlowmeterOutput }}online{{ else }}offline{{ end }}">
+            {{ if .FlowmeterOutput }}ON{{ else }}OFF{{ end }}
+        </span>
+    </td>
+    <td class="status-cell">
+        <span class="status-badge {{ if .FlowmeterBunker }}online{{ else }}offline{{ end }}">
+            {{ if .FlowmeterBunker }}ON{{ else }}OFF{{ end }}
+        </span>
+    </td>
+    <td class="total-cell online">{{ .OnlineTotal }}</td>
+    <td class="total-cell offline">{{ .OfflineTotal }}</td>
+    <td class="total-cell {{ if gt .OnlinePercent 50.0 }}online{{ else }}offline{{ end }}">
+        {{ printf "%.0f" .OnlinePercent }}%
+    </td>
+    <td>
+        <button class="btn btn-danger btn-sm" hx-delete="/reports/{{ .ID }}" hx-target="#report-{{ .ID }}"
+            hx-swap="outerHTML" hx-confirm="Hapus data {{ .ShipName }}?">
+            🗑️
+        </button>
+    </td>
+</tr>

@@ -1,0 +1,67 @@
+<div class="table-wrapper">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Code</th>
+                <th>Date</th>
+                <th>Ship Name</th>
+                <th>Device</th>
+                <th>GPS</th>
+                <th>RPM Port</th>
+                <th>RPM Stbd</th>
+                <th>FM Input</th>
+                <th>FM Output</th>
+                <th>FM Bunker</th>
+                <th>Online</th>
+                <th>Offline</th>
+                <th>%</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="reports-tbody">
+            {{ range .Reports }}
+            {{ template "report_row.html" . }}
+            {{ else }}
+            <tr>
+                <td colspan="14" class="empty-state">
+                    <div class="empty-state-icon">📭</div>
+                    <div class="empty-state-text">Belum ada data untuk periode ini</div>
+                </td>
+            </tr>
+            {{ end }}
+        </tbody>
+    </table>
+</div>
+
+{{ if .Reports }}
+<!-- Pagination -->
+<div class="pagination">
+    <span class="pagination-info">
+        Menampilkan {{ .StartIndex }} - {{ .EndIndex }} dari {{ .TotalRecords }} data
+    </span>
+
+    <button class="pagination-btn" onclick="loadPage(1)" {{ if eq .CurrentPage 1 }}disabled{{ end }}>
+        ⏮️
+    </button>
+
+    <button class="pagination-btn" onclick="loadPage({{ .PrevPage }})" {{ if eq .CurrentPage 1 }}disabled{{ end }}>
+        ◀️
+    </button>
+
+    {{ range .PageNumbers }}
+    <button class="pagination-btn {{ if eq . $.CurrentPage }}active{{ end }}" onclick="loadPage({{ . }})">
+        {{ . }}
+    </button>
+    {{ end }}
+
+    <button class="pagination-btn" onclick="loadPage({{ .NextPage }})" {{ if eq .CurrentPage .TotalPages }}disabled{{
+        end }}>
+        ▶️
+    </button>
+
+    <button class="pagination-btn" onclick="loadPage({{ .TotalPages }})" {{ if eq .CurrentPage .TotalPages }}disabled{{
+        end }}>
+        ⏭️
+    </button>
+</div>
+{{ end }}

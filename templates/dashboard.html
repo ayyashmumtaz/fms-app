@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="id">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Dashboard - FMS Performance</title>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="/static/toast.js"></script>
+    <link rel="stylesheet" href="/static/styles.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom chart styling overrides if needed */
+        .chart-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--slate-800);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .chart-container {
+            min-width: 0;
+        }
+
+        .chart-container canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Navigation -->
+        {{ template "header.html" . }}
+
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-brand" style="display: flex; align-items: center; gap: 1rem;">
+                {{ if .Logo }}<img src="{{ .Logo }}" style="height: 50px; width: auto; object-fit: contain;"
+                    alt="Logo">{{ end }}
+                <div>
+                    <h1>📊 Dashboard Performance</h1>
+                    <p>Ringkasan kinerja perangkat seluruh armada</p>
+                </div>
+            </div>
+
+            <div class="header-actions">
+            </div>
+        </header>
+
+        {{ if .Summaries }}
+        <!-- Charts Section -->
+        <div class="chart-grid">
+            <!-- Bar Chart: Device Performance Comparison -->
+            <div class="card chart-container">
+                <div class="chart-title">📊 Perbandingan Online Rate per Period</div>
+                <div style="width: 100%; overflow: hidden;">
+                    <div style="position: relative;">
+                        <canvas id="barChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Donut Chart: Total Online vs Offline -->
+            <div class="card chart-container">
+                <div class="chart-title">🎯 Total Online vs Offline (Semua Period)</div>
+                <div style="width: 100%; overflow: hidden;">
+                    <div style="position: relative;">
+                        <canvas id="donutChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Line Chart: Trend Analysis -->
+        <div class="card chart-container">
+            <div class="chart-title">📈 Trend Analisis: Online vs Offline</div>
+            <div style="width: 100%; overflow: hidden;">
+                <div style="position: relative;">
+                    <canvas id="lineChart"></canvas>
+                </div>
+            </div>
+        </div>
+        {{ end }}
+
+        <!-- Summary Cards Divider -->
+        <div
+            style="margin-top: 3rem; margin-bottom: 1.5rem; border-top: 1px solid var(--slate-200); padding-top: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2 style="font-size: 18px; color: var(--slate-800);">📋 Detail Performa per Periode</h2>
+                <span style="font-size: 13px; color: var(--slate-500);">Total Periode: {{ len .Summaries }}</span>
+            </div>
+        </div>
+        <div class="dashboard-grid">
+            {{ range .Summaries }}
+            <div class="card dashboard-card" style="display: flex; flex-direction: column; height: 100%;">
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 1rem; margin-bottom: 1rem; border-bottom: 1px solid var(--slate-100);">
+                    <h3 style="font-size: 16px; font-weight: 700; color: var(--slate-800); margin: 0;">{{ .Code }}</h3>
+                    <a href="/report?code={{ .Code }}" class="btn btn-secondary"
+                        style="padding: 0.25rem 0.75rem; font-size: 12px; height: auto;">View Details</a>
+                </div>
+
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <span
+                        style="font-size: 36px; font-weight: 800; color: var(--slate-900); display: block; line-height: 1;">{{
+                        .TotalShips }}</span>
+                    <span
+                        style="font-size: 11px; font-weight: 600; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.05em;">Total
+                        Vessels</span>
+                </div>
+
+                <div class="stats-grid" style="gap: 0.75rem; margin-bottom: auto;">
+                    <div class="stat-card online" style="padding: 1rem;">
+                        <span class="stat-value" style="font-size: 20px;">{{ .TotalOnline }}</span>
+                        <span class="stat-label" style="font-size: 10px;">Online</span>
+                        <span class="badge badge-online" style="margin-top: 0.25rem; font-size: 10px;">{{ printf "%.0f"
+                            .OnlinePercentage }}%</span>
+                    </div>
+                    <div class="stat-card offline" style="padding: 1rem;">
+                        <span class="stat-value" style="font-size: 20px;">{{ .TotalOffline }}</span>
+                        <span class="stat-label" style="font-size: 10px;">Offline</span>
+                        <span class="badge badge-offline" style="margin-top: 0.25rem; font-size: 10px;">{{ printf "%.0f"
+                            .OfflinePercentage }}%</span>
+                    </div>
+                </div>
+
+                <div style="margin-top: 1.5rem;">
+                    <div
+                        style="display: flex; justify-content: space-between; font-size: 11px; color: var(--slate-500); margin-bottom: 0.25rem;">
+                        <span>Progress</span>
+                        <span>{{ printf "%.1f" .OnlinePercentage }}%</span>
+                    </div>
+                    <div style="background: var(--slate-100); border-radius: 999px; height: 6px; overflow: hidden;">
+                        <div style="height: 100%; width: {{ printf " %.1f" .OnlinePercentage }}%; background:
+                            linear-gradient(90deg, var(--primary-500), var(--primary-400));"></div>
+                    </div>
+                </div>
+            </div>
+            {{ else }}
+            <div class="empty-state" style="grid-column: 1 / -1;">
+                <div class="empty-state-icon">📊</div>
+                <div class="empty-state-text">Belum ada data. Silakan input data terlebih dahulu.</div>
+                <a href="/" class="btn btn-primary" style="margin-top: 1rem;">➕ Input Data</a>
+            </div>
+            {{ end }}
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <small>FMS Device Performance Reporting System &copy; {{ .CurrentYear }}</small>
+        </footer>
+    </div>
+
+    <script>
+        // Fetch dashboard data from API
+        async function loadDashboardData() {
+            try {
+                const response = await fetch('/api/dashboard-data');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch dashboard data');
+                }
+                const chartData = await response.json();
+
+                // Initialize charts with fetched data
+                initializeCharts(chartData);
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+                // Show empty charts with default data
+                const emptyData = {
+                    labels: [],
+                    onlinePercentages: [],
+                    offlinePercentages: [],
+                    totalOnline: [],
+                    totalOffline: []
+                };
+                initializeCharts(emptyData);
+            }
+        }
+
+        function initializeCharts(chartData) {
+            // Calculate totals
+            const sumOnline = chartData.totalOnline.reduce((a, b) => a + b, 0);
+            const sumOffline = chartData.totalOffline.reduce((a, b) => a + b, 0);
+
+            // Chart.js Default Config for Premium Look
+            Chart.defaults.font.family = 'Inter, sans-serif';
+            Chart.defaults.color = '#64748b'; // slate-500
+            Chart.defaults.scale.grid.color = '#f1f5f9'; // slate-100
+            Chart.defaults.scale.grid.borderColor = 'transparent'; // Hide axis borders
+            Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(15, 23, 42, 0.9)'; // slate-900
+            Chart.defaults.plugins.tooltip.padding = 12;
+            Chart.defaults.plugins.tooltip.cornerRadius = 8;
+            Chart.defaults.plugins.tooltip.titleFont = { size: 13, weight: 600 };
+            Chart.defaults.plugins.tooltip.bodyFont = { size: 12 };
+            Chart.defaults.plugins.tooltip.displayColors = false; // Cleaner tooltips
+
+            // Helper to create gradient
+            function createGradient(ctx, colorStart, colorEnd) {
+                const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+                gradient.addColorStop(0, colorStart);
+                gradient.addColorStop(1, colorEnd);
+                return gradient;
+            }
+
+            // 1. Bar Chart: Online Rate Comparison
+            const barCtx = document.getElementById('barChart').getContext('2d');
+            if (barCtx) {
+                const gradientSuccess = createGradient(barCtx, '#3b82f6', '#1d4ed8'); // Indigo gradient
+
+                new Chart(barCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: chartData.labels,
+                        datasets: [{
+                            label: 'Online Rate',
+                            data: chartData.onlinePercentages,
+                            backgroundColor: gradientSuccess,
+                            borderRadius: 6,
+                            borderSkipped: false,
+                            barPercentage: 0.6,
+                            categoryPercentage: 0.8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: (context) => `Online Rate: ${context.parsed.y.toFixed(1)}%`
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: {
+                                    callback: (value) => value + '%',
+                                    font: { size: 11 }
+                                },
+                                grid: {
+                                    borderDash: [4, 4],
+                                    drawBorder: false,
+                                }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { font: { size: 11, weight: 500 } }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 2. Donut Chart: Total Online vs Offline
+            const donutCtx = document.getElementById('donutChart').getContext('2d');
+            if (donutCtx) {
+                new Chart(donutCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Online', 'Offline'],
+                        datasets: [{
+                            data: [sumOnline, sumOffline],
+                            backgroundColor: [
+                                '#10b981', // Emerald-500
+                                '#f43f5e'  // Rose-500
+                            ],
+                            borderWidth: 0,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '75%', // Thinner ring for modern look
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    usePointStyle: true,
+                                    pointStyle: 'circle',
+                                    padding: 20,
+                                    font: { size: 12, weight: 500 }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        const total = sumOnline + sumOffline;
+                                        const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                        return `${context.label}: ${context.parsed} Devices (${percentage}%)`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 3. Line Chart: Trend Analysis (Area Chart Style)
+            const lineCtx = document.getElementById('lineChart').getContext('2d');
+            if (lineCtx) {
+                const gradientOnline = lineCtx.createLinearGradient(0, 0, 0, 400);
+                gradientOnline.addColorStop(0, 'rgba(16, 185, 129, 0.2)'); // Emerald transparent
+                gradientOnline.addColorStop(1, 'rgba(16, 185, 129, 0)');
+
+                const gradientOffline = lineCtx.createLinearGradient(0, 0, 0, 400);
+                gradientOffline.addColorStop(0, 'rgba(244, 63, 94, 0.2)'); // Rose transparent
+                gradientOffline.addColorStop(1, 'rgba(244, 63, 94, 0)');
+
+                new Chart(lineCtx, {
+                    type: 'line',
+                    data: {
+                        labels: chartData.labels,
+                        datasets: [
+                            {
+                                label: 'Online Devices',
+                                data: chartData.totalOnline,
+                                borderColor: '#10b981', // Emerald-500
+                                backgroundColor: gradientOnline,
+                                borderWidth: 2,
+                                tension: 0.4, // Smooth curve
+                                fill: true,
+                                pointBackgroundColor: '#ffffff',
+                                pointBorderColor: '#10b981',
+                                pointBorderWidth: 2,
+                                pointRadius: 4,
+                                pointHoverRadius: 6
+                            },
+                            {
+                                label: 'Offline Devices',
+                                data: chartData.totalOffline,
+                                borderColor: '#f43f5e', // Rose-500
+                                backgroundColor: gradientOffline,
+                                borderWidth: 2,
+                                tension: 0.4,
+                                fill: true,
+                                pointBackgroundColor: '#ffffff',
+                                pointBorderColor: '#f43f5e',
+                                pointBorderWidth: 2,
+                                pointRadius: 4,
+                                pointHoverRadius: 6
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                align: 'end',
+                                labels: {
+                                    usePointStyle: true,
+                                    pointStyle: 'circle',
+                                    boxWidth: 8,
+                                    padding: 20,
+                                    font: { size: 12, weight: 500 }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    borderDash: [4, 4],
+                                    drawBorder: false,
+                                },
+                                ticks: { font: { size: 11 } }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { font: { size: 11 } }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Load data when page loads
+        document.addEventListener('DOMContentLoaded', loadDashboardData);
+    </script>
+</body>
+
+</html>

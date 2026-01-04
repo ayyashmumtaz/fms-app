@@ -1,0 +1,39 @@
+<aside style="position: sticky; top: 1rem;">
+    <div class="card" style="padding: 1rem;">
+        <h3
+            style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--slate-400); margin-bottom: 0.5rem; font-weight: 700;">
+            System Config</h3>
+        <nav style="display: flex; flex-direction: column; gap: 0.25rem;">
+
+            <!-- Link to Settings Page (General) -->
+            <!-- We use query param or simple logic for active state -->
+            <a href="/settings/general" class="sidebar-link {{ if eq .ActiveSidebar " general" }}active{{ end }}">
+                🔧 General / Logo
+            </a>
+
+            <a href="/settings/projects" class="sidebar-link {{ if eq .ActiveSidebar " projects" }}active{{ end }}">
+                🏷️ Project Codes
+            </a>
+
+            <a href="/settings" class="sidebar-link {{ if eq .ActiveSidebar " sensors" }}active{{ end }}">
+                📡 Device Sensors
+            </a>
+
+            <a href="/settings/ships" class="sidebar-link {{ if eq .ActiveSidebar " ships" }}active{{ end }}">
+                🏢 Ship Management
+            </a>
+        </nav>
+
+        <h3
+            style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--slate-400); margin: 1.5rem 0 0.5rem; font-weight: 700;">
+            Admin</h3>
+        <nav style="display: flex; flex-direction: column; gap: 0.25rem;">
+            <a href="#" class="sidebar-link disabled" title="Coming Soon">
+                👤 Users & Roles
+            </a>
+            <a href="#" class="sidebar-link disabled" title="Coming Soon">
+                🔒 Security
+            </a>
+        </nav>
+    </div>
+</aside>

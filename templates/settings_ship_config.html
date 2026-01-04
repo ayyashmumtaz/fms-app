@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="id">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Configure Ship - FMS</title>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <script src="/static/toast.js"></script>
+    <link rel="stylesheet" href="/static/styles.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .sidebar-link {
+            display: block;
+            padding: 0.75rem 1rem;
+            color: var(--slate-600);
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .sidebar-link:hover:not(.disabled) {
+            background-color: var(--slate-50);
+            color: var(--slate-900);
+        }
+
+        .sidebar-link.active {
+            background-color: var(--primary-50);
+            color: var(--primary-700);
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Navigation -->
+        <!-- Navigation -->
+        {{ template "header.html" . }}
+
+        <header class="app-header">
+            <div class="header-brand">
+                <h1>⚙️ Settings</h1>
+                <p>Pusat konfigurasi sistem aplikasi FMS</p>
+            </div>
+        </header>
+
+        <!-- Layout Grid -->
+        <div style="display: grid; grid-template-columns: 240px 1fr; gap: 2rem; align-items: start;">
+
+            <!-- Sidebar -->
+            <!-- Sidebar -->
+            {{ template "sidebar.html" . }}
+
+            <!-- Main Content -->
+            <main>
+                <div class="card">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <div>
+                            <h3 class="card-title" style="margin: 0;">{{ .Ship.Name }}</h3>
+                            <p style="color: var(--slate-500); font-size: 13px; margin-top: 0.25rem;">Configure active
+                                sensors for this vessel.</p>
+                        </div>
+                        <a href="/settings/ships" class="btn btn-secondary"
+                            style="font-size: 13px; text-decoration: none;">&larr; Back to Fleet</a>
+                    </div>
+
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Sensor Name</th>
+                                <th>Global Status</th>
+                                <th>Ship Status</th>
+                                <th style="text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{ range .Sensors }}
+                            <tr>
+                                <td style="font-weight: 500;">{{ .Name }}</td>
+                                <td>
+                                    <span
+                                        class="badge {{ if .GlobalActive }}badge-online{{ else }}badge-offline{{ end }}"
+                                        style="opacity: 0.7;">
+                                        {{ if .GlobalActive }}Active{{ else }}Inactive{{ end }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span
+                                        class="badge {{ if .ShipActive }}badge-online{{ else }}badge-offline{{ end }}">
+                                        {{ if .ShipActive }}Enabled{{ else }}Disabled{{ end }}
+                                    </span>
+                                    {{ if .IsOverride }}<small
+                                        style="color: var(--primary-600); margin-left: 0.5rem;">(Override)</small>{{ end
+                                    }}
+                                </td>
+                                <td style="text-align: right;">
+                                    <form action="/settings/ships/{{ $.Ship.ID }}/toggle" method="POST"
+                                        style="margin: 0;">
+                                        <input type="hidden" name="sensor_code" value="{{ .Code }}">
+                                        <button type="submit" class="btn btn-secondary"
+                                            style="padding: 0.25rem 0.75rem; font-size: 12px;">
+                                            {{ if .ShipActive }}Disable Sensor{{ else }}Enable Sensor{{ end }}
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {{ else }}
+                            <tr>
+                                <td colspan="4" style="text-align: center;">No sensors available.</td>
+                            </tr>
+                            {{ end }}
+                        </tbody>
+                    </table>
+                </div>
+            </main>
+        </div>
+
+        <footer class="footer" style="margin-top: 3rem;">
+            <small>FMS Device Performance Reporting System &copy; 2025</small>
+        </footer>
+    </div>
+</body>
+
+</html>

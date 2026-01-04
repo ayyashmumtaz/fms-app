@@ -1,0 +1,19 @@
+{{ define "partials/record_row.html" }}
+{{ $r := .Record }}
+<tr id="row-{{ $r.ID }}">
+  <td>{{ $r.ID }}</td>
+  <td>{{ formatDate $r.Tanggal }}</td>
+  <td>{{ $r.Periode }}</td>
+  <td>{{ $r.Kategori }}</td>
+  <td class="right">{{ $r.Nilai }}</td>
+  <td class="right">
+    <button class="danger"
+            hx-delete="/records/{{ $r.ID }}"
+            hx-target="#row-{{ $r.ID }}"
+            hx-swap="outerHTML"
+            hx-confirm="Yakin hapus record ini?">
+      Hapus
+    </button>
+  </td>
+</tr>
+{{ end }}

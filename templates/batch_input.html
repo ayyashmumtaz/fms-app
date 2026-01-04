@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="id">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Batch Input Status - FMS</title>
+    <!-- HTMX & Toast includes -->
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <script src="/static/toast.js"></script>
+    <link rel="stylesheet" href="/static/styles.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .batch-table {
+            width: 100%;
+            border-collapse: separate;
+            /* Required for sticky */
+            border-spacing: 0;
+            font-size: 13px;
+        }
+
+        .batch-table th,
+        .batch-table td {
+            border: 1px solid var(--slate-200);
+            padding: 8px;
+            vertical-align: middle;
+        }
+
+        .batch-table th {
+            background: var(--slate-50);
+            font-weight: 600;
+            color: var(--slate-700);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        /* Sticky First Column (Ship Name) */
+        .batch-table th:nth-child(2),
+        .batch-table td:nth-child(2) {
+            position: sticky;
+            left: 0;
+            z-index: 15;
+            /* Higher than normal cells */
+            background: white;
+            border-right: 2px solid var(--slate-200);
+        }
+
+        .batch-table th:nth-child(2) {
+            z-index: 20;
+            /* Higher than headers */
+            background: var(--slate-50);
+        }
+
+        .batch-input-wrapper {
+            max-height: 70vh;
+            overflow: auto;
+            border: 1px solid var(--slate-200);
+            border-radius: 8px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+            position: relative;
+        }
+
+        /* Checkbox styling */
+        input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            accent-color: var(--primary-600);
+        }
+
+        tr:hover td {
+            background-color: var(--slate-50);
+        }
+
+        /* Ensure sticky column keeps its background on hover if needed, 
+           or let it blend. We set bg white above, so we might need td:hover override */
+        tr:hover td:nth-child(2) {
+            background-color: var(--slate-50);
+        }
+
+        tr.selected {
+            background-color: var(--primary-50) !important;
+        }
+
+        tr.selected td {
+            background-color: var(--primary-50) !important;
+        }
+
+        .cell-inactive {
+            background-color: #f8fafc !important;
+            color: #cbd5e1 !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Navigation -->
+        <!-- Navigation -->
+        {{ template "header.html" . }}
+
+        <header class="app-header">
+            <div class="header-brand" style="display: flex; align-items: center; gap: 1rem;">
+                {{ if .Logo }}<img src="{{ .Logo }}" style="height: 50px; width: auto; object-fit: contain;"
+                    alt="Logo">{{ end }}
+                <div>
+                    <h1>📦 Batch Sensor Status</h1>
+                    <p>Input massal status sensor (Online/Offline) per kapal.</p>
+                </div>
+            </div>
+        </header>
+
+        <form action="/batch-input" method="POST" class="card">
+            <div class="form-grid"
+                style="grid-template-columns: 1fr 1fr 1fr auto; align-items: end; margin-bottom: 2rem; gap: 1rem;">
+                <div class="form-field">
+                    <label class="form-label required">Periode Laporan</label>
+                    <input type="month" name="report_period" class="form-input" required value="{{ .CurrentPeriod }}">
+                </div>
+                <div class="form-field">
+                    <label class="form-label">Kode Proyek (Optional)</label>
+                    <select name="project_code" class="form-input">
+                        {{ range .Projects }}
+                        <option value="{{ .Code }}">{{ .Code }} - {{ .Name }}</option>
+                        {{ end }}
+                    </select>
+                </div>
+                <div class="form-field"></div>
+                <div class="form-field">
+                    <button type="submit" class="btn btn-primary" style="min-width: 160px; height: 42px;">💾 Simpan
+                        Status</button>
+                </div>
+            </div>
+
+            <div class="batch-input-wrapper">
+                <table class="batch-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px; text-align: center;">✅</th>
+                            <th style="min-width: 180px;">Nama Kapal</th>
+                            <!-- Dynamic Columns -->
+                            {{ range .Columns }}
+                            <th style="min-width: 80px; text-align: center; white-space: nowrap;" title="{{ .Name }}">{{
+                                .Name }}</th>
+                            {{ end }}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{ range .Ships }}
+                        <tr onclick="toggleRow(this)">
+                            <td style="text-align: center;">
+                                <input type="checkbox" name="status_{{ .ID }}" value="on"
+                                    onclick="event.stopPropagation()">
+                            </td>
+                            <td style="font-weight: 500;">{{ .Name }}</td>
+
+                            {{ $shipID := .ID }}
+                            {{ $config := .Config }}
+
+                            {{ range $.Columns }}
+                            {{ $active := index $config .Code }}
+                            <td class="{{ if not $active }}cell-inactive{{ end }}" style="text-align: center;">
+                                {{ if $active }}
+                                <input type="checkbox" name="sensor_{{ $shipID }}_{{ .Code }}" value="on"
+                                    onclick="event.stopPropagation()">
+                                {{ else }}
+                                <span style="font-size: 10px;">✕</span>
+                                {{ end }}
+                            </td>
+                            {{ end }}
+                        </tr>
+                        {{ end }}
+                    </tbody>
+                </table>
+            </div>
+
+            <div
+                style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem; color: var(--slate-500); font-size: 13px;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span class="info-icon">ℹ️</span>
+                    <span>Centang kolom <strong>✅</strong> untuk menyertakan kapal dalam laporan.</span>
+                </div>
+                <div>
+                    Centang kotak pada matriks untuk menandakan status sensor <strong>ONLINE / AKTIF</strong>. Kotak
+                    tanpa centang berarti <strong>OFFLINE</strong>. <br>
+                    Tanda <strong>✕</strong> berarti sensor dinonaktifkan untuk kapal tersebut di pengaturan.
+                </div>
+            </div>
+        </form>
+
+        <footer class="footer" style="margin-top: 3rem;">
+            <small>FMS Device Performance Reporting System &copy; 2025</small>
+        </footer>
+    </div>
+
+    <script>
+        function toggleRow(tr) {
+            const checkbox = tr.querySelector('input[name^="status_"]');
+            if (checkbox) {
+                checkbox.checked = !checkbox.checked;
+                updateRowStyle(tr, checkbox.checked);
+            }
+        }
+
+        function updateRowStyle(tr, checked) {
+            if (checked) tr.classList.add('selected');
+            else tr.classList.remove('selected');
+        }
+
+        document.querySelectorAll('input[type="checkbox"][name^="status_"]').forEach(cb => {
+            cb.addEventListener('change', function (e) {
+                e.stopPropagation();
+                updateRowStyle(this.closest('tr'), this.checked);
+            });
+        });
+    </script>
+</body>
+
+</html>

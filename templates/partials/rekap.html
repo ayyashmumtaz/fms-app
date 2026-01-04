@@ -1,0 +1,32 @@
+<div style="margin-bottom: 1.5rem;">
+  <h3 style="font-size: 16px; font-weight: 600; color: var(--slate-800); margin-bottom: 1rem;">
+    📊 Ringkasan: {{ .Code }}
+  </h3>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <span class="stat-value">{{ .TotalShips }}</span>
+      <span class="stat-label">Total Kapal</span>
+    </div>
+
+    <div class="stat-card online">
+      <span class="stat-value">{{ .TotalOnline }}</span>
+      <span class="stat-label">Online</span>
+    </div>
+
+    <div class="stat-card offline">
+      <span class="stat-value">{{ .TotalOffline }}</span>
+      <span class="stat-label">Offline</span>
+    </div>
+
+    <div class="stat-card total">
+      <span class="stat-value">{{ printf "%.1f" .OnlinePercentage }}%</span>
+      <span class="stat-label">Online Rate</span>
+    </div>
+  </div>
+
+  <div style="margin-top: 1rem; background: var(--slate-100); border-radius: 999px; height: 10px; overflow: hidden;">
+    <div style="height: 100%; width: {{ printf " %.1f" .OnlinePercentage }}%; background: linear-gradient(90deg,
+      var(--success-500), var(--success-400)); border-radius: 999px; transition: width 1s ease;"></div>
+  </div>
+</div>

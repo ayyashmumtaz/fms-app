@@ -1,0 +1,16 @@
+{{ range .Sensors }}
+<div class="form-field">
+    <label class="form-label">{{ .Name }}</label>
+    <select name="sensor_{{ .Code }}" class="form-input">
+        <option value="on">🟢 Online</option>
+        <option value="off">🔴 Offline</option>
+    </select>
+</div>
+{{ else }}
+<div class="form-field" style="grid-column: 1 / -1;">
+    <div
+        style="padding: 1rem; background: #fff1f2; border: 1px dashed #fda4af; border-radius: 6px; color: #be123c; font-size: 13px; text-align: center;">
+        ⚠️ No active sensors configured for this ship. Check settings.
+    </div>
+</div>
+{{ end }}
