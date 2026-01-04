@@ -94,12 +94,62 @@ func Dashboard(c *gin.Context) {
 		})
 	}
 
+	// Get latest 10 reports
+	var latestReports []DeviceReport
+	lRows, err := db.DB.Query(`
+		SELECT id, code, report_date, ship_name, 
+		       device_condition, gps, rpm_me_port, rpm_me_stbd,
+		       flowmeter_input, flowmeter_output, flowmeter_bunker,
+		       sensors_data,
+		       created_at, updated_at
+		FROM fms_device_reports
+		ORDER BY created_at DESC
+		LIMIT 10
+	`)
+	if err == nil {
+		defer lRows.Close()
+		for lRows.Next() {
+			var r DeviceReport
+			var sensorsJson []byte
+			if err := lRows.Scan(
+				&r.ID, &r.Code, &r.ReportDate, &r.ShipName,
+				&r.DeviceCondition, &r.GPS, &r.RpmMEPort, &r.RpmMEStbd,
+				&r.FlowmeterInput, &r.FlowmeterOutput, &r.FlowmeterBunker,
+				&sensorsJson,
+				&r.CreatedAt, &r.UpdatedAt,
+			); err != nil {
+				continue
+			}
+
+			if len(sensorsJson) > 0 {
+				_ = json.Unmarshal(sensorsJson, &r.SensorsData)
+			}
+			r.CalculateTotals()
+			latestReports = append(latestReports, r)
+		}
+	}
+
+	// Fetch sensors from DB for table headers
+	var sensors []SensorConfig
+	sRows, err := db.DB.Query("SELECT code, name FROM fms_sensor_config WHERE is_active = true ORDER BY display_order ASC")
+	if err == nil {
+		defer sRows.Close()
+		for sRows.Next() {
+			var s SensorConfig
+			if err := sRows.Scan(&s.Code, &s.Name); err == nil {
+				sensors = append(sensors, s)
+			}
+		}
+	}
+
 	c.HTML(http.StatusOK, "dashboard.html", gin.H{
-		"Summaries":   summaries,
-		"Codes":       codes,
-		"CurrentYear": time.Now().Year(),
-		"ActiveTab":   "dashboard",
-		"Logo":        GetCompanyLogo(),
+		"Summaries":     summaries,
+		"Codes":         codes,
+		"LatestReports": latestReports,
+		"Sensors":       sensors,
+		"CurrentYear":   time.Now().Year(),
+		"ActiveTab":     "dashboard",
+		"Logo":          GetCompanyLogo(),
 	})
 }
 
