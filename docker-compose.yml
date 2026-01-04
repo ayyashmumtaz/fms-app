@@ -15,7 +15,7 @@ services:
     restart: always
 
   db:
-    image: postgres:15-alpine
+    image: postgres:18-alpine
     container_name: fms-db
     environment:
       - POSTGRES_USER=fms_user
