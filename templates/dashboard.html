@@ -328,13 +328,13 @@
                         setTimeout(() => row.remove(), 300);
                     }
 
-                    // Show success toast if available or alert
+                    // Show success toast
                     if (typeof showToast === 'function') {
                         showToast('Sensor berhasil diperbaiki!', 'success');
                     }
 
-                    // Reload data after delay to update charts
-                    setTimeout(loadDashboardData, 1000);
+                    // Reload page after a short delay to update everything (tables, charts, header badge)
+                    setTimeout(() => window.location.reload(), 800);
 
                     // Note: If all rows are gone, the card will remain empty until reload. 
                     // We could add logic to hide the card if no rows left, but reload handles it cleanly enough.

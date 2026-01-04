@@ -37,10 +37,11 @@ func main() {
 	r.SetHTMLTemplate(tmpl)
 
 	// Routes
-	r.GET("/", handlers.Index)
+	r.GET("/", handlers.Dashboard)
+	r.GET("/input", handlers.Index)
 	r.GET("/healthz", func(c *gin.Context) { c.String(http.StatusOK, "ok") })
 
-	// Dashboard
+	// Dashboard (kept for backward compatibility if needed, but root is now preferred)
 	r.GET("/dashboard", handlers.Dashboard)
 	r.GET("/report", handlers.MonthlyReport)
 
