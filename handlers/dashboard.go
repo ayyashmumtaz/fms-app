@@ -240,12 +240,27 @@ func MonthlyReport(c *gin.Context) {
 		}
 	}
 
+	// Get active projects for filter dropdown
+	var projects []string
+	pRows, err := db.DB.Query("SELECT code FROM fms_projects WHERE is_active = true ORDER BY code ASC")
+	if err == nil {
+		defer pRows.Close()
+		for pRows.Next() {
+			var pCode string
+			if err := pRows.Scan(&pCode); err == nil {
+				projects = append(projects, pCode)
+			}
+		}
+	}
+
 	c.HTML(http.StatusOK, "monthly_report.html", gin.H{
-		"Code":      code,
-		"Reports":   reports,
-		"Codes":     codes,
-		"Sensors":   sensors, // Assuming 'distinctSensors' was a typo and 'sensors' should be used.
-		"ActiveTab": "report",
-		"Logo":      GetCompanyLogo(),
+		"Code":           code,
+		"Reports":        reports,
+		"Codes":          codes,
+		"Sensors":        sensors,
+		"Projects":       projects,
+		"CurrentProject": project, // Added current project for selection state
+		"ActiveTab":      "report",
+		"Logo":           GetCompanyLogo(),
 	})
 }

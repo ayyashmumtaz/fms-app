@@ -32,8 +32,12 @@
                     <label
                         style="font-size: 11px; font-weight: 600; color: var(--slate-500); text-transform: uppercase;">Project
                         Code</label>
-                    <input type="text" name="project" placeholder="FMS" value="FMS" class="form-input"
-                        style="padding: 0.5rem; width: 80px;">
+                    <select name="project" class="form-input" style="padding: 0.5rem; min-width: 100px; height: 38px;">
+                        {{ range .Projects }}
+                        <option value="{{ . }}" {{ if eq . (or $.CurrentProject "FMS" ) }}selected{{ end }}>{{ . }}
+                        </option>
+                        {{ end }}
+                    </select>
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 0.25rem;">
                     <label

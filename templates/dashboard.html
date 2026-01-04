@@ -44,7 +44,7 @@
                 {{ if .Logo }}<img src="{{ .Logo }}" style="height: 50px; width: auto; object-fit: contain;"
                     alt="Logo">{{ end }}
                 <div>
-                    <h1>📊 Dashboard Performance</h1>
+                    <h1>Dashboard Performance</h1>
                     <p>Ringkasan kinerja perangkat seluruh armada</p>
                 </div>
             </div>
@@ -52,6 +52,65 @@
             <div class="header-actions">
             </div>
         </header>
+
+        <!-- Latest Data Section -->
+        {{ if .LatestReports }}
+        <div style="margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2 style="font-size: 18px; color: var(--slate-800);">📝 Latest Data Entries</h2>
+                <a href="/report" class="btn btn-secondary" style="font-size: 12px; padding: 0.5rem 1rem;">View All
+                    Reports
+                    &rarr;</a>
+            </div>
+        </div>
+
+        <div class="card" style="padding: 0; overflow: hidden; margin-bottom: 3rem;">
+            <div style="overflow-x: auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Ship Name</th>
+                            <th>Date</th>
+                            <th>Code</th>
+                            <!-- Dynamic Sensor Headers -->
+                            {{ range $.Sensors }}
+                            <th style="text-align: center; white-space: nowrap;">{{ .Name }}</th>
+                            {{ end }}
+                            <th style="text-align: center;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{ range .LatestReports }}
+                        <tr>
+                            <td class="ship-name-cell">{{ .ShipName }}</td>
+                            <td style="color: var(--slate-500); white-space: nowrap;">
+                                {{ .ReportDate.Format "02 Jan 2006" }}
+                            </td>
+                            <td style="color: var(--slate-400); font-size: 12px;">{{ .Code }}</td>
+
+                            {{ $report := . }}
+                            {{ range $.Sensors }}
+                            {{ $isOn := lookupSensor $report.SensorsData .Code }}
+                            <td style="text-align: center;">
+                                <span class="badge {{ if $isOn }}badge-online{{ else }}badge-offline{{ end }}">
+                                    {{ if $isOn }}ON{{ else }}OFF{{ end }}
+                                </span>
+                            </td>
+                            {{ end }}
+
+                            <td style="text-align: center;">
+                                <span
+                                    class="badge {{ if gt .OnlinePercent 50.0 }}badge-online{{ else }}badge-offline{{ end }}">
+                                    {{ printf "%.0f" .OnlinePercent }}%
+                                </span>
+                            </td>
+                        </tr>
+                        {{ end }}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {{ end }}
 
         {{ if .Summaries }}
         <!-- Charts Section -->
@@ -151,65 +210,7 @@
             {{ end }}
         </div>
 
-        <!-- Latest Data Section -->
-        {{ if .LatestReports }}
-        <div
-            style="margin-top: 3rem; margin-bottom: 1.5rem; border-top: 1px solid var(--slate-200); padding-top: 2rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h2 style="font-size: 18px; color: var(--slate-800);">📝 Latest Data Entries</h2>
-                <a href="/report" class="btn btn-secondary" style="font-size: 12px; padding: 0.5rem 1rem;">View All
-                    Reports
-                    &rarr;</a>
-            </div>
-        </div>
 
-        <div class="card" style="padding: 0; overflow: hidden;">
-            <div style="overflow-x: auto;">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Ship Name</th>
-                            <th>Date</th>
-                            <th>Code</th>
-                            <!-- Dynamic Sensor Headers -->
-                            {{ range $.Sensors }}
-                            <th style="text-align: center; white-space: nowrap;">{{ .Name }}</th>
-                            {{ end }}
-                            <th style="text-align: center;">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {{ range .LatestReports }}
-                        <tr>
-                            <td class="ship-name-cell">{{ .ShipName }}</td>
-                            <td style="color: var(--slate-500); white-space: nowrap;">
-                                {{ .ReportDate.Format "02 Jan 2006" }}
-                            </td>
-                            <td style="color: var(--slate-400); font-size: 12px;">{{ .Code }}</td>
-
-                            {{ $report := . }}
-                            {{ range $.Sensors }}
-                            {{ $isOn := lookupSensor $report.SensorsData .Code }}
-                            <td style="text-align: center;">
-                                <span class="badge {{ if $isOn }}badge-online{{ else }}badge-offline{{ end }}">
-                                    {{ if $isOn }}ON{{ else }}OFF{{ end }}
-                                </span>
-                            </td>
-                            {{ end }}
-
-                            <td style="text-align: center;">
-                                <span
-                                    class="badge {{ if gt .OnlinePercent 50.0 }}badge-online{{ else }}badge-offline{{ end }}">
-                                    {{ printf "%.0f" .OnlinePercent }}%
-                                </span>
-                            </td>
-                        </tr>
-                        {{ end }}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        {{ end }}
 
         <!-- Footer -->
         <footer class="footer">
