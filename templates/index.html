@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Input Data - FMS Device Performance</title>
+  <title>Input Data - Device Performance</title>
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
   <script src="/static/toast.js"></script>
   <link rel="stylesheet" href="/static/styles.css" />
@@ -34,8 +34,7 @@
     <div class="card">
       <h2>Tambah Data Kapal Baru</h2>
 
-      <form hx-post="/reports" hx-target="#reports-tbody" hx-swap="beforeend"
-        hx-on::after-request="if(event.detail.successful){ this.reset(); refreshRekap(); }">
+      <form hx-post="/reports" hx-swap="none" hx-on::after-request="if(event.detail.successful){ this.reset(); }">
 
         <!-- Basic Info Section -->
         <div class="form-section">
@@ -113,77 +112,11 @@
       </form>
     </div>
 
-    <!-- Filter & Summary -->
-    <div class="card">
-      <div class="filter-bar">
-        <div>
-          <h2 style="margin-bottom: 0;">Data Periode</h2>
-          <p class="text-muted text-sm">Filter data berdasarkan periode</p>
-        </div>
-      </div>
 
-      <!-- Advanced Filter -->
-      <div class="filter-section">
-        <div class="filter-group">
-          <label class="filter-label">Tahun</label>
-          <select id="year-filter" class="filter-select" onchange="updateFilter()">
-            <!-- Will be populated by JavaScript -->
-          </select>
-        </div>
-
-        <div class="filter-group">
-          <label class="filter-label">Bulan</label>
-          <select id="month-filter" class="filter-select" onchange="updateFilter()">
-            <option value="">Semua Bulan</option>
-            <option value="01">Januari</option>
-            <option value="02">Februari</option>
-            <option value="03">Maret</option>
-            <option value="04">April</option>
-            <option value="05">Mei</option>
-            <option value="06">Juni</option>
-            <option value="07">Juli</option>
-            <option value="08">Agustus</option>
-            <option value="09">September</option>
-            <option value="10">Oktober</option>
-            <option value="11">November</option>
-            <option value="12">Desember</option>
-          </select>
-        </div>
-
-        <div class="filter-group">
-          <label class="filter-label">Hari</label>
-          <select id="day-filter" class="filter-select" onchange="updateFilter()">
-            <option value="">Semua Hari</option>
-          </select>
-        </div>
-
-        <div class="filter-group">
-          <label class="filter-label" style="opacity: 0;">Action</label>
-          <button class="btn btn-primary" onclick="refreshData()">
-            🔄 Refresh
-          </button>
-        </div>
-      </div>
-
-      <!-- Summary Box -->
-      <div id="rekap" hx-get="/rekap" hx-vals='js:{code: getCurrentCode()}' hx-trigger="load" hx-target="this"
-        hx-swap="innerHTML" style="margin-top: 1.5rem;">
-        <div style="text-align: center; padding: 2rem; color: #6b7280;">Loading...</div>
-      </div>
-    </div>
-
-    <!-- Data Table -->
-    <div class="card">
-      <h2>Daftar Data</h2>
-      <div id="reports-section" hx-get="/reports" hx-vals='js:{code: getCurrentCode(), page: 1}' hx-trigger="load"
-        hx-target="this" hx-swap="innerHTML">
-        <div style="text-align: center; padding: 2rem; color: #6b7280;">Loading...</div>
-      </div>
-    </div>
 
     <!-- Footer -->
     <footer class="footer">
-      <small>FMS Device Performance Reporting System &copy; 2025</small>
+      <small>Device Performance Reporting System &copy; 2025</small>
     </footer>
   </div>
 
@@ -197,90 +130,7 @@
       if (periodInput) {
         periodInput.value = monthStr;
       }
-
-      initializeFilters();
     });
-
-    function initializeFilters() {
-      // Populate year filter (last 5 years)
-      const yearFilter = document.getElementById('year-filter');
-      const currentYear = new Date().getFullYear();
-
-      for (let i = 0; i <= 5; i++) {
-        const year = currentYear - i;
-        const option = document.createElement('option');
-        option.value = year;
-        option.textContent = year;
-        if (i === 0) option.selected = true;
-        yearFilter.appendChild(option);
-      }
-
-      // Set current month as default
-      const currentMonth = String(new Date().getMonth() + 1).padStart(2, '0');
-      document.getElementById('month-filter').value = currentMonth;
-
-      // Populate day filter
-      updateDayFilter();
-    }
-
-    function updateDayFilter() {
-      const year = document.getElementById('year-filter').value;
-      const month = document.getElementById('month-filter').value;
-      const dayFilter = document.getElementById('day-filter');
-
-      // Clear existing options except "Semua Hari"
-      dayFilter.innerHTML = '<option value="">Semua Hari</option>';
-
-      if (month) {
-        const daysInMonth = new Date(year, parseInt(month), 0).getDate();
-        for (let day = 1; day <= daysInMonth; day++) {
-          const option = document.createElement('option');
-          option.value = String(day).padStart(2, '0');
-          option.textContent = day;
-          dayFilter.appendChild(option);
-        }
-      }
-    }
-
-    function updateFilter() {
-      updateDayFilter();
-      // Auto-refresh data when filter changes
-      refreshData();
-    }
-
-    function getCurrentCode() {
-      const year = document.getElementById('year-filter').value;
-      const month = document.getElementById('month-filter').value;
-      const day = document.getElementById('day-filter').value;
-
-      if (!year || !month) {
-        return 'FMS ' + new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-      }
-
-      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const monthName = monthNames[parseInt(month) - 1];
-
-      if (day) {
-        return `FMS ${parseInt(day)} ${monthName} ${year}`;
-      } else {
-        return `FMS ${monthName} ${year}`;
-      }
-    }
-
-    function refreshData() {
-      const code = getCurrentCode();
-      htmx.ajax('GET', '/rekap?code=' + encodeURIComponent(code), '#rekap');
-      htmx.ajax('GET', '/reports?code=' + encodeURIComponent(code) + '&page=1', '#reports-section');
-    }
-
-    function refreshRekap() {
-      htmx.ajax('GET', '/rekap?code=' + encodeURIComponent(getCurrentCode()), '#rekap');
-    }
-
-    function loadPage(page) {
-      htmx.ajax('GET', '/reports?code=' + encodeURIComponent(getCurrentCode()) + '&page=' + page, '#reports-section');
-    }
   </script>
 </body>
 
