@@ -84,11 +84,17 @@
                             <!-- Dynamic Sensor Cells -->
                             {{ $report := . }}
                             {{ range $.Sensors }}
-                            {{ $isOn := lookupSensor $report.SensorsData .Code }}
+                            {{ $val := lookupSensor $report.SensorsData .Code }}
                             <td style="text-align: center;">
-                                <span class="badge {{ if $isOn }}badge-online{{ else }}badge-offline{{ end }}">
-                                    {{ if $isOn }}ON{{ else }}OFF{{ end }}
-                                </span>
+                                {{ if eq $val nil }}
+                                <span class="badge badge-disabled">-</span>
+                                {{ else }}
+                                {{ if isTrue $val }}
+                                <span class="badge badge-online">ON</span>
+                                {{ else }}
+                                <span class="badge badge-offline">OFF</span>
+                                {{ end }}
+                                {{ end }}
                             </td>
                             {{ end }}
 

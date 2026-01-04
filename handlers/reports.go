@@ -32,7 +32,7 @@ func ListReports(c *gin.Context) {
 
 	// Get total count
 	var totalRecords int
-	err = db.DB.QueryRow(`SELECT COUNT(*) FROM fms_device_reports WHERE code = $1`, code).Scan(&totalRecords)
+	err = db.DB.QueryRow(`SELECT COUNT(*) FROM fms_device_reports WHERE code LIKE $1`, code).Scan(&totalRecords)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error: %v", err)
 		return
@@ -40,13 +40,14 @@ func ListReports(c *gin.Context) {
 
 	// Get paginated data
 	rows, err := db.DB.Query(`
-		SELECT id, code, report_date, ship_name, 
+		SELECT id, code, report_date, ship_name,
 		       device_condition, gps, rpm_me_port, rpm_me_stbd,
 		       flowmeter_input, flowmeter_output, flowmeter_bunker,
+		       sensors_data,
 		       created_at, updated_at
 		FROM fms_device_reports
-		WHERE code = $1
-		ORDER BY ship_name ASC
+		WHERE code LIKE $1
+		ORDER BY report_date ASC, ship_name ASC
 		LIMIT $2 OFFSET $3
 	`, code, perPage, offset)
 	if err != nil {

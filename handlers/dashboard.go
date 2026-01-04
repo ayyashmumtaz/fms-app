@@ -142,15 +142,169 @@ func Dashboard(c *gin.Context) {
 		}
 	}
 
+	// Fetch trouble reports (latest report per ship with offline sensors)
+	var troubleReports []DeviceReport
+	tRows, err := db.DB.Query(`
+		SELECT DISTINCT ON (ship_name) id, code, report_date, ship_name, 
+		       device_condition, gps, rpm_me_port, rpm_me_stbd,
+		       flowmeter_input, flowmeter_output, flowmeter_bunker,
+		       sensors_data,
+		       created_at, updated_at
+		FROM fms_device_reports
+		ORDER BY ship_name, created_at DESC
+	`)
+	if err == nil {
+		defer tRows.Close()
+		for tRows.Next() {
+			var r DeviceReport
+			var sensorsJson []byte
+			if err := tRows.Scan(
+				&r.ID, &r.Code, &r.ReportDate, &r.ShipName,
+				&r.DeviceCondition, &r.GPS, &r.RpmMEPort, &r.RpmMEStbd,
+				&r.FlowmeterInput, &r.FlowmeterOutput, &r.FlowmeterBunker,
+				&sensorsJson,
+				&r.CreatedAt, &r.UpdatedAt,
+			); err != nil {
+				continue
+			}
+
+			if len(sensorsJson) > 0 {
+				_ = json.Unmarshal(sensorsJson, &r.SensorsData)
+			}
+			r.CalculateTotals()
+
+			// If has offline sensors, add to trouble list
+			if r.OfflineTotal > 0 {
+				troubleReports = append(troubleReports, r)
+			}
+		}
+	}
+
 	c.HTML(http.StatusOK, "dashboard.html", gin.H{
-		"Summaries":     summaries,
-		"Codes":         codes,
-		"LatestReports": latestReports,
-		"Sensors":       sensors,
-		"CurrentYear":   time.Now().Year(),
-		"ActiveTab":     "dashboard",
-		"Logo":          GetCompanyLogo(),
+		"Summaries":      summaries,
+		"Codes":          codes,
+		"LatestReports":  latestReports,
+		"TroubleReports": troubleReports,
+		"Sensors":        sensors,
+		"CurrentYear":    time.Now().Year(),
+		"ActiveTab":      "dashboard",
+		"Logo":           GetCompanyLogo(),
 	})
+}
+
+// GetNotificationCount returns the HTML fragment for the notification badge
+func GetNotificationCount(c *gin.Context) {
+	// Fetch trouble reports count
+	count := 0
+	rows, err := db.DB.Query(`
+		SELECT DISTINCT ON (ship_name) id, sensors_data
+		FROM fms_device_reports
+		ORDER BY ship_name, created_at DESC
+	`)
+	if err == nil {
+		defer rows.Close()
+		for rows.Next() {
+			var id int
+			var sensorsJson []byte
+			if err := rows.Scan(&id, &sensorsJson); err == nil {
+				var sensorsData map[string]bool
+				if len(sensorsJson) > 0 {
+					_ = json.Unmarshal(sensorsJson, &sensorsData)
+				}
+
+				// Check if any sensor is offline
+				hasOffline := false
+				if len(sensorsData) > 0 {
+					for _, status := range sensorsData {
+						if !status {
+							hasOffline = true
+							break
+						}
+					}
+				}
+
+				if hasOffline {
+					count++
+				}
+			}
+		}
+	}
+
+	if count > 0 {
+		c.HTML(http.StatusOK, "notification_badge.html", gin.H{
+			"Count": count,
+		})
+	} else {
+		// Return empty div if no notifications
+		c.String(http.StatusOK, `<!-- No notifications -->`)
+	}
+}
+
+// ResolveAlert marks a specific sensor in a report as fixed (Online)
+func ResolveAlert(c *gin.Context) {
+	idStr := c.Param("id")
+	sensorCode := c.Query("sensor")
+
+	if sensorCode == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Sensor code is required"})
+		return
+	}
+
+	// 1. Fetch current data
+	var sensorsJson []byte
+	err := db.DB.QueryRow(`
+		SELECT sensors_data 
+		FROM fms_device_reports 
+		WHERE id = $1
+	`, idStr).Scan(&sensorsJson)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Report not found"})
+		return
+	}
+
+	// 2. Unmarshal and update sensors
+	sensorsMap := make(map[string]bool)
+	if len(sensorsJson) > 0 {
+		_ = json.Unmarshal(sensorsJson, &sensorsMap)
+	}
+
+	// Update specific sensor
+	sensorsMap[sensorCode] = true
+
+	// Marshal back
+	newSensorsJson, _ := json.Marshal(sensorsMap)
+
+	// 3. Update DB (JSON and Legacy Column if applicable)
+	// We construct the query dynamically based on the sensor code if it maps to a legacy column
+	query := `UPDATE fms_device_reports SET sensors_data = $1, updated_at = CURRENT_TIMESTAMP`
+	args := []interface{}{newSensorsJson, idStr}
+
+	// Legacy columns mapping
+	legacyColumns := map[string]string{
+		"device_condition": "device_condition",
+		"gps":              "gps",
+		"rpm_me_port":      "rpm_me_port",
+		"rpm_me_stbd":      "rpm_me_stbd",
+		"flowmeter_input":  "flowmeter_input",
+		"flowmeter_output": "flowmeter_output",
+		"flowmeter_bunker": "flowmeter_bunker",
+	}
+
+	if col, isLegacy := legacyColumns[sensorCode]; isLegacy {
+		query = `UPDATE fms_device_reports SET ` + col + ` = true, sensors_data = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`
+	} else {
+		query += ` WHERE id = $2`
+	}
+
+	_, err = db.DB.Exec(query, args...)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true})
 }
 
 // MonthlyReport shows detailed report for a specific code/month
@@ -160,18 +314,21 @@ func MonthlyReport(c *gin.Context) {
 	dateStr := c.Query("date")
 
 	// Filter by Project + Date if provided (New Filter Logic)
+	// Filter by Project + Date if provided (New Filter Logic)
 	if project != "" && dateStr != "" {
 		// dateStr is YYYY-MM (e.g., 2025-12)
 		parsedDate, err := time.Parse("2006-01", dateStr)
 		if err == nil {
 			// Convert to "Dec 2025" format
 			period := parsedDate.Format("Jan 2006")
-			code = project + " " + period
+			// Use wildcard for matching: PROJECT % PERIOD
+			code = project + "%" + period
 		}
 	}
 
 	if code == "" {
-		code = time.Now().Format("FMS Jan 2006")
+		// Default view: current month
+		code = "FMS % " + time.Now().Format("Jan 2006")
 	}
 
 	// Get all reports for this code
@@ -182,7 +339,7 @@ func MonthlyReport(c *gin.Context) {
 		       sensors_data,
 		       created_at, updated_at
 		FROM fms_device_reports
-		WHERE code = $1
+		WHERE code LIKE $1
 		ORDER BY report_date ASC, ship_name ASC
 	`, code)
 	if err != nil {

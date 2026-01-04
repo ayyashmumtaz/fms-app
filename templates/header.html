@@ -1,7 +1,79 @@
-<nav class="nav-tabs">
-    <a href="/" class="nav-tab {{ if eq .ActiveTab " input" }}active{{ end }}">📥 Input Data</a>
-    <a href="/batch-input" class="nav-tab {{ if eq .ActiveTab " batch" }}active{{ end }}">📦 Batch Input</a>
-    <a href="/dashboard" class="nav-tab {{ if eq .ActiveTab " dashboard" }}active{{ end }}">📊 Dashboard</a>
-    <a href="/report" class="nav-tab {{ if eq .ActiveTab " report" }}active{{ end }}">📑 Laporan Detail</a>
-    <a href="/settings" class="nav-tab {{ if eq .ActiveTab " settings" }}active{{ end }}">⚙️ Settings</a>
-</nav>
+<div class="header-nav-container">
+    <nav class="nav-tabs">
+        <a href="/" class="nav-tab {{ if eq .ActiveTab " input" }}active{{ end }}">📥 Input Data</a>
+        <a href="/batch-input" class="nav-tab {{ if eq .ActiveTab " batch" }}active{{ end }}">📦 Batch Input</a>
+        <a href="/dashboard" class="nav-tab {{ if eq .ActiveTab " dashboard" }}active{{ end }}">📊 Dashboard</a>
+        <a href="/report" class="nav-tab {{ if eq .ActiveTab " report" }}active{{ end }}">📑 Laporan Detail</a>
+        <a href="/settings" class="nav-tab {{ if eq .ActiveTab " settings" }}active{{ end }}">⚙️ Settings</a>
+    </nav>
+
+    <div id="notification-area" hx-get="/api/notification-count" hx-trigger="load, every 30s" hx-swap="innerHTML">
+        <!-- Loaded via HTMX -->
+    </div>
+</div>
+
+<style>
+    .header-nav-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        margin-bottom: var(--space-6);
+    }
+
+    .notification-pill {
+        background: #fee2e2;
+        border: 1px solid #fca5a5;
+        color: #b91c1c;
+        padding: 0.5rem 1rem;
+        border-radius: 9999px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 700;
+        font-size: 13px;
+        box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.1);
+        transition: all 0.2s;
+    }
+
+    .notification-pill:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 10px -1px rgba(220, 38, 38, 0.15);
+        background: #fecaca;
+    }
+
+    .notification-icon {
+        font-size: 16px;
+    }
+
+    .blink-alert {
+        animation: blink 2s infinite ease-in-out;
+    }
+
+    @keyframes blink {
+        0% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.6;
+        }
+
+        100% {
+            opacity: 1;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .header-nav-container {
+            flex-direction: column;
+            gap: 1rem;
+            align-items: stretch;
+        }
+
+        .nav-tabs {
+            width: 100%;
+            overflow-x: auto;
+        }
+    }
+</style>

@@ -159,6 +159,7 @@ a:hover {
     font-weight: 700;
     letter-spacing: -0.025em;
     background: linear-gradient(135deg, var(--primary-600), var(--primary-800));
+    background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
@@ -228,6 +229,10 @@ a:hover {
     font-size: 18px;
     font-weight: 600;
     color: var(--slate-800);
+}
+
+.card-compact {
+    padding: var(--space-4);
 }
 
 /* ===== Input Fields ===== */
@@ -410,6 +415,11 @@ select.filter-select {
 .badge-offline {
     background: var(--error-100);
     color: var(--error-700);
+}
+
+.badge-disabled {
+    background: var(--slate-100);
+    color: var(--slate-400);
 }
 
 /* ===== Filter Bar ===== */

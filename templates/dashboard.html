@@ -30,6 +30,24 @@
             width: 100% !important;
             height: 100% !important;
         }
+
+        .blink-alert {
+            animation: blink 1.5s infinite ease-in-out;
+        }
+
+        @keyframes blink {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.4;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
     </style>
 </head>
 
@@ -48,10 +66,59 @@
                     <p>Ringkasan kinerja perangkat seluruh armada</p>
                 </div>
             </div>
-
-            <div class="header-actions">
-            </div>
         </header>
+
+        <!-- Trouble Reports Section (Critical Alerts) -->
+        {{ if .TroubleReports }}
+        <div style="margin-bottom: 2.5rem;">
+            <h2
+                style="font-size: 18px; color: #b91c1c; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                ⚠️ Critical Sensor Alerts
+                <span
+                    style="background: #fef2f2; color: #b91c1c; padding: 2px 8px; border-radius: 99px; font-size: 12px; border: 1px solid #fecaca;">{{
+                    len .TroubleReports }} Ships</span>
+            </h2>
+            <div class="dashboard-grid">
+                {{ range .TroubleReports }}
+                <div class="card card-compact" id="alert-card-{{ .ID }}" style="border-left: 4px solid #ef4444;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                        <div>
+                            <h3 style="font-size: 15px; font-weight: 700; color: var(--slate-800); margin: 0;">{{
+                                .ShipName
+                                }}</h3>
+                            <div style="font-size: 11px; color: var(--slate-500); margin-top: 2px;">{{
+                                .ReportDate.Format
+                                "02 Jan 2006" }}</div>
+                        </div>
+                    </div>
+
+                    <div
+                        style="display: flex; flex-direction: column; gap: 0.25rem; background: #fff1f2; padding: 0.5rem; border-radius: 6px; border: 1px solid #ffe4e6;">
+                        {{ $report := . }}
+                        {{ range $.Sensors }}
+                        {{ $val := lookupSensor $report.SensorsData .Code }}
+                        {{ if and (ne $val nil) (not (isTrue $val)) }}
+                        <div id="alert-row-{{$report.ID}}-{{.Code}}"
+                            style="display: flex; justify-content: space-between; align-items: center; padding: 2px 0;">
+                            <div
+                                style="display: flex; align-items: center; gap: 0.5rem; color: #9f1239; font-size: 11px; font-weight: 600;">
+                                <span style="font-size: 8px;">🔴</span>
+                                <span>{{ .Name }} is OFF</span>
+                            </div>
+                            <button onclick="resolveAlert({{ $report.ID }}, '{{ .Code }}')" class="btn btn-secondary"
+                                style="font-size: 10px; padding: 2px 8px; height: auto; border-color: #fca5a5; color: #b91c1c; background: #fff;">
+                                ✔ Perbaiki
+                            </button>
+                        </div>
+                        {{ end }}
+                        {{ end }}
+                    </div>
+                </div>
+                {{ end }}
+            </div>
+        </div>
+        {{ end }}
 
         <!-- Latest Data Section -->
         {{ if .LatestReports }}
@@ -76,6 +143,7 @@
                             {{ range $.Sensors }}
                             <th style="text-align: center; white-space: nowrap;">{{ .Name }}</th>
                             {{ end }}
+                            <th style="text-align: center;">Offline</th>
                             <th style="text-align: center;">Status</th>
                         </tr>
                     </thead>
@@ -90,13 +158,37 @@
 
                             {{ $report := . }}
                             {{ range $.Sensors }}
-                            {{ $isOn := lookupSensor $report.SensorsData .Code }}
+                            {{ $sensorStatus := lookupSensor $report.SensorsData .Code }}
                             <td style="text-align: center;">
-                                <span class="badge {{ if $isOn }}badge-online{{ else }}badge-offline{{ end }}">
-                                    {{ if $isOn }}ON{{ else }}OFF{{ end }}
-                                </span>
+                                {{ if eq $sensorStatus nil }}
+                                <span class="badge badge-disabled">-</span>
+                                {{ else }}
+                                {{ if isTrue $sensorStatus }}
+                                <span class="badge badge-online">ON</span>
+                                {{ else }}
+                                <span class="badge badge-offline">OFF</span>
+                                {{ end }}
+                                {{ end }}
                             </td>
                             {{ end }}
+
+                            <td style="text-align: center; vertical-align: middle;">
+                                <span
+                                    style="font-weight: 700; color: {{ if gt .OfflineTotal 0 }}var(--error-600){{ else }}var(--slate-300){{ end }};">
+                                    {{ .OfflineTotal }}
+                                </span>
+                                {{ if gt .OfflineTotal 0 }}
+                                <div
+                                    style="font-size: 10px; color: var(--error-500); max-width: 120px; margin: 4px auto 0; line-height: 1.2;">
+                                    {{ range $.Sensors }}
+                                    {{ $val := lookupSensor $report.SensorsData .Code }}
+                                    {{ if and (ne $val nil) (not (isTrue $val)) }}
+                                    <div style="white-space: nowrap;">{{ .Name }}</div>
+                                    {{ end }}
+                                    {{ end }}
+                                </div>
+                                {{ end }}
+                            </td>
 
                             <td style="text-align: center;">
                                 <span
@@ -219,6 +311,42 @@
     </div>
 
     <script>
+        async function resolveAlert(id, sensorCode) {
+            // Updated confirmation message
+            if (!confirm("Konfirmasi: Apakah sensor ini sudah diperbaiki? Status akan diupdate menjadi ON.")) return;
+
+            try {
+                // Updated API call with sensor parameter
+                const response = await fetch(`/api/resolve-alert/${id}?sensor=${sensorCode}`, { method: 'POST' });
+                if (response.ok) {
+                    // Remove specific sensor row from UI
+                    const row = document.getElementById(`alert-row-${id}-${sensorCode}`);
+                    if (row) {
+                        row.style.transition = 'all 0.3s';
+                        row.style.opacity = '0';
+                        row.style.height = '0';
+                        setTimeout(() => row.remove(), 300);
+                    }
+
+                    // Show success toast if available or alert
+                    if (typeof showToast === 'function') {
+                        showToast('Sensor berhasil diperbaiki!', 'success');
+                    }
+
+                    // Reload data after delay to update charts
+                    setTimeout(loadDashboardData, 1000);
+
+                    // Note: If all rows are gone, the card will remain empty until reload. 
+                    // We could add logic to hide the card if no rows left, but reload handles it cleanly enough.
+                } else {
+                    alert('Gagal mengupdate status.');
+                }
+            } catch (error) {
+                console.error(error);
+                alert('Terjadi kesalahan koneksi.');
+            }
+        }
+
         // Fetch dashboard data from API
         async function loadDashboardData() {
             try {

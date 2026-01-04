@@ -55,6 +55,8 @@ func main() {
 
 	// JSON API
 	r.GET("/api/dashboard-data", handlers.GetDashboardData)
+	r.GET("/api/notification-count", handlers.GetNotificationCount)
+	r.POST("/api/resolve-alert/:id", handlers.ResolveAlert)
 
 	// Settings
 	r.GET("/settings", handlers.SettingsPage)

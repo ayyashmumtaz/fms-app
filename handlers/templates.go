@@ -23,11 +23,14 @@ func TemplateFuncs() template.FuncMap {
 			}
 			return m
 		},
-		"lookupSensor": func(m map[string]bool, key string) bool {
+		"lookupSensor": func(m map[string]bool, key string) *bool {
 			if val, ok := m[key]; ok {
-				return val
+				return &val
 			}
-			return false
+			return nil
+		},
+		"isTrue": func(b *bool) bool {
+			return b != nil && *b
 		},
 	}
 }
