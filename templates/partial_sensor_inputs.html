@@ -2,15 +2,23 @@
 <div class="form-field">
     <label class="form-label">{{ .Name }}</label>
     <select name="sensor_{{ .Code }}" class="form-input">
-        <option value="on">🟢 Online</option>
-        <option value="off">🔴 Offline</option>
+        <option value="on">✓ Online</option>
+        <option value="off">✗ Offline</option>
     </select>
 </div>
 {{ else }}
 <div class="form-field" style="grid-column: 1 / -1;">
-    <div
-        style="padding: 1rem; background: #fff1f2; border: 1px dashed #fda4af; border-radius: 6px; color: #be123c; font-size: 13px; text-align: center;">
-        ⚠️ No active sensors configured for this ship. Check settings.
+    <div class="alert alert-warning" style="margin: 0;">
+        <svg class="alert-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+            </path>
+        </svg>
+        <div class="alert-content">
+            <strong>No Active Sensors</strong><br>
+            No sensors are configured for this ship. <a href="/settings" style="color: var(--primary-600);">Configure in
+                Settings</a>
+        </div>
     </div>
 </div>
 {{ end }}

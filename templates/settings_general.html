@@ -9,96 +9,251 @@
     <script src="/static/toast.js"></script>
     <link rel="stylesheet" href="/static/styles.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        .sidebar-link {
-            display: block;
-            padding: 0.75rem 1rem;
-            color: var(--slate-600);
-            text-decoration: none;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-
-        .sidebar-link:hover:not(.disabled) {
-            background-color: var(--slate-50);
-            color: var(--slate-900);
-        }
-
-        .sidebar-link.active {
-            background-color: var(--primary-50);
-            color: var(--primary-700);
-            font-weight: 600;
-        }
-    </style>
 </head>
 
 <body>
     <div class="container">
-        <!-- Navigation -->
         {{ template "header.html" . }}
 
         <header class="app-header">
-            <div class="header-brand">
-                <h1>⚙️ Settings</h1>
-                <p>Pusat konfigurasi sistem aplikasi FMS</p>
+            <div class="header-brand" style="display: flex; align-items: center; gap: 1rem;">
+                {{ if .Logo }}<img src="{{ .Logo }}" style="height: 48px; width: auto; object-fit: contain;"
+                    alt="Logo">{{ end }}
+                <div>
+                    <h1>Settings</h1>
+                    <p>Pusat konfigurasi sistem aplikasi FMS</p>
+                </div>
             </div>
         </header>
 
-        <!-- Layout Grid -->
         <div style="display: grid; grid-template-columns: 240px 1fr; gap: 2rem; align-items: start;">
-
-            <!-- Sidebar -->
             {{ template "sidebar.html" . }}
 
-            <!-- Main Content -->
             <main>
+                <!-- Company Branding -->
                 <div class="card">
-                    <h3 class="card-title">General Settings</h3>
-                    <p style="color: var(--slate-500); font-size: 13px;">Konfigurasi umum aplikasi.</p>
+                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
+                        <div
+                            style="width: 40px; height: 40px; background: var(--primary-100); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                            <svg style="width: 22px; height: 22px; color: var(--primary-600);" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                </path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="card-title" style="margin: 0;">Company Branding</h3>
+                            <p style="color: var(--slate-500); font-size: 13px; margin: 0;">Upload logo perusahaan untuk
+                                ditampilkan di header</p>
+                        </div>
+                    </div>
 
-                    <hr style="border: 0; border-top: 1px solid var(--slate-200); margin: 1.5rem 0;">
-
-                    <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 1rem;">Company Logo</h4>
-
-                    <div style="display: flex; gap: 2rem; align-items: start; flex-wrap: wrap;">
-                        <!-- Current Logo -->
-                        <div style="text-align: center;">
-                            <div
-                                style="width: 150px; height: 150px; background: white; border: 1px solid var(--slate-200); border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 0.5rem; padding: 10px;">
-                                <img src="{{ .Logo }}" alt="Company Logo"
-                                    style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                    <div style="display: grid; grid-template-columns: 200px 1fr; gap: 2rem; align-items: start;">
+                        <!-- Current Logo Preview -->
+                        <div
+                            style="background: var(--slate-50); border: 2px dashed var(--slate-200); border-radius: var(--radius-xl); padding: 2rem; text-align: center; min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                            {{ if .Logo }}
+                            <img src="{{ .Logo }}"
+                                style="max-width: 150px; max-height: 150px; object-fit: contain; border-radius: var(--radius-lg); margin-bottom: 1rem;"
+                                alt="Current Logo">
+                            <span class="badge badge-success">Active</span>
+                            {{ else }}
+                            <div style="color: var(--slate-400); font-size: 13px;">
+                                <svg style="width: 48px; height: 48px; margin: 0 auto 1rem; display: block;" fill="none"
+                                    stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                    </path>
+                                </svg>
+                                No logo uploaded
                             </div>
-                            <small style="color: var(--slate-500);">Current Logo</small>
+                            {{ end }}
                         </div>
 
                         <!-- Upload Form -->
-                        <form action="/settings/logo" method="POST" enctype="multipart/form-data"
-                            style="flex: 1; max-width: 400px; background: var(--slate-50); padding: 1.5rem; border-radius: 8px; border: 1px dashed var(--slate-300);">
-                            <div class="form-field">
-                                <label class="form-label" style="font-weight: 600;">Upload New Logo</label>
-                                <input type="file" name="logo" class="form-input"
-                                    accept="image/png, image/jpeg, image/jpg" required style="background: white;">
-                                <p style="font-size: 12px; color: var(--slate-500); margin-top: 0.5rem;">
-                                    Format: PNG, JPG.<br>Recommended: Transparent background.
-                                </p>
+                        <div>
+                            <form action="/settings/logo" method="POST" enctype="multipart/form-data">
+                                <div class="form-field" style="margin-bottom: 1.5rem;">
+                                    <label class="form-label">Upload New Logo</label>
+                                    <div style="border: 2px dashed var(--slate-300); border-radius: var(--radius-lg); padding: 2rem; text-align: center; cursor: pointer; transition: all 0.2s; background: var(--slate-50);"
+                                        id="dropZone" onclick="document.getElementById('logoInput').click()">
+                                        <svg style="width: 32px; height: 32px; color: var(--slate-400); margin: 0 auto 0.5rem; display: block;"
+                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
+                                            </path>
+                                        </svg>
+                                        <p style="color: var(--slate-500); font-size: 13px; margin: 0;">
+                                            Click to upload or drag & drop
+                                        </p>
+                                        <p style="color: var(--slate-400); font-size: 11px; margin-top: 4px;">
+                                            PNG, JPG, GIF (Max 2MB)
+                                        </p>
+                                        <input type="file" name="logo" id="logoInput" accept="image/*"
+                                            style="display: none;" onchange="previewFile(this)">
+                                    </div>
+                                    <div id="filePreview"
+                                        style="margin-top: 1rem; display: none; padding: 0.75rem; background: var(--success-50); border-radius: var(--radius-md); border: 1px solid var(--success-200);">
+                                        <span
+                                            style="color: var(--success-700); font-size: 13px; display: flex; align-items: center; gap: 0.5rem;">
+                                            <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M5 13l4 4L19 7"></path>
+                                            </svg>
+                                            <span id="fileName">File selected</span>
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="button-group" style="justify-content: flex-start;">
+                                    <button type="submit" class="btn btn-primary" id="uploadBtn" disabled>
+                                        <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12">
+                                            </path>
+                                        </svg>
+                                        Upload Logo
+                                    </button>
+                                </div>
+                            </form>
+
+                            <div class="alert alert-info" style="margin-top: 1.5rem;">
+                                <svg class="alert-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <div class="alert-content">
+                                    <strong>Tips:</strong> Gunakan gambar dengan background transparan (PNG) untuk hasil
+                                    terbaik. Ukuran ideal 200x50px atau rasio serupa.
+                                </div>
                             </div>
-                            <div style="margin-top: 1rem;">
-                                <button type="submit" class="btn btn-primary">Update Logo</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- System Info (Optional) -->
+                <div class="card" style="margin-top: 1.5rem;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
+                        <div
+                            style="width: 40px; height: 40px; background: var(--slate-100); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                            <svg style="width: 22px; height: 22px; color: var(--slate-500);" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="card-title" style="margin: 0;">System Information</h3>
+                            <p style="color: var(--slate-500); font-size: 13px; margin: 0;">About this application</p>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                        <div style="padding: 1rem; background: var(--slate-50); border-radius: var(--radius-lg);">
+                            <div
+                                style="font-size: 11px; text-transform: uppercase; color: var(--slate-400); letter-spacing: 0.05em; margin-bottom: 4px;">
+                                Version
                             </div>
-                        </form>
+                            <div style="font-size: 14px; font-weight: 600; color: var(--slate-700);">
+                                v2.0.0
+                            </div>
+                        </div>
+                        <div style="padding: 1rem; background: var(--slate-50); border-radius: var(--radius-lg);">
+                            <div
+                                style="font-size: 11px; text-transform: uppercase; color: var(--slate-400); letter-spacing: 0.05em; margin-bottom: 4px;">
+                                Last Updated
+                            </div>
+                            <div style="font-size: 14px; font-weight: 600; color: var(--slate-700);">
+                                January 2026
+                            </div>
+                        </div>
+                        <div style="padding: 1rem; background: var(--slate-50); border-radius: var(--radius-lg);">
+                            <div
+                                style="font-size: 11px; text-transform: uppercase; color: var(--slate-400); letter-spacing: 0.05em; margin-bottom: 4px;">
+                                Environment
+                            </div>
+                            <div style="font-size: 14px; font-weight: 600; color: var(--slate-700);">
+                                Production
+                            </div>
+                        </div>
                     </div>
                 </div>
             </main>
         </div>
 
-        <footer class="footer" style="margin-top: 3rem;">
-            <small>Device Performance Reporting System &copy; 2025</small>
+        <footer class="footer">
+            <small>Fleet Management System &copy; 2026</small>
         </footer>
     </div>
+
     <script>
         Toast.init();
+
+        function previewFile(input) {
+            const file = input.files[0];
+            const preview = document.getElementById('filePreview');
+            const fileName = document.getElementById('fileName');
+            const uploadBtn = document.getElementById('uploadBtn');
+
+            if (file) {
+                // Check file size (2MB max)
+                if (file.size > 2 * 1024 * 1024) {
+                    showToast('File size must be less than 2MB', 'error');
+                    input.value = '';
+                    return;
+                }
+
+                fileName.textContent = file.name;
+                preview.style.display = 'block';
+                uploadBtn.disabled = false;
+            } else {
+                preview.style.display = 'none';
+                uploadBtn.disabled = true;
+            }
+        }
+
+        // Drag and drop handling
+        const dropZone = document.getElementById('dropZone');
+        const logoInput = document.getElementById('logoInput');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight() {
+            dropZone.style.borderColor = 'var(--primary-500)';
+            dropZone.style.background = 'var(--primary-50)';
+        }
+
+        function unhighlight() {
+            dropZone.style.borderColor = 'var(--slate-300)';
+            dropZone.style.background = 'var(--slate-50)';
+        }
+
+        dropZone.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            logoInput.files = files;
+            previewFile(logoInput);
+        }
     </script>
 </body>
 

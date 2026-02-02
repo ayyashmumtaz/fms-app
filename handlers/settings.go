@@ -147,7 +147,44 @@ func ToggleSensor(c *gin.Context) {
 		return
 	}
 
-	c.Redirect(http.StatusSeeOther, "/settings?success=Status+sensor+diupdate!+🔄")
+	c.Redirect(http.StatusSeeOther, "/settings?success=Status+sensor+diupdate!")
+}
+
+// UpdateSensor updates sensor name and display order
+func UpdateSensor(c *gin.Context) {
+	idStr := c.Param("id")
+	name := c.PostForm("name")
+	displayOrder := c.PostForm("display_order")
+
+	if name == "" {
+		c.Redirect(http.StatusSeeOther, "/settings?error=Nama+sensor+harus+diisi")
+		return
+	}
+
+	_, err := db.DB.Exec("UPDATE fms_sensor_config SET name = $1, display_order = $2 WHERE id = $3", name, displayOrder, idStr)
+	if err != nil {
+		c.Redirect(http.StatusSeeOther, "/settings?error=Gagal+mengupdate+sensor")
+		return
+	}
+
+	c.Redirect(http.StatusSeeOther, "/settings?success=Sensor+berhasil+diupdate!")
+}
+
+// DeleteSensor removes a sensor configuration
+func DeleteSensor(c *gin.Context) {
+	idStr := c.Param("id")
+
+	// Delete ship-specific configurations first
+	_, _ = db.DB.Exec("DELETE FROM fms_ship_sensors WHERE sensor_code = (SELECT code FROM fms_sensor_config WHERE id = $1)", idStr)
+
+	// Then delete the sensor config
+	_, err := db.DB.Exec("DELETE FROM fms_sensor_config WHERE id = $1", idStr)
+	if err != nil {
+		c.Redirect(http.StatusSeeOther, "/settings?error=Gagal+menghapus+sensor")
+		return
+	}
+
+	c.Redirect(http.StatusSeeOther, "/settings?success=Sensor+berhasil+dihapus!")
 }
 
 // Helper to get company logo
@@ -221,5 +258,51 @@ func UpdateLogo(c *gin.Context) {
 
 	cachedLogo = dbPath // Update cache
 
-	c.Redirect(http.StatusSeeOther, "/settings/general?success=Logo+updated!+✅")
+	c.Redirect(http.StatusSeeOther, "/settings/general?success=Logo+updated!")
+}
+
+// ToggleProject toggles project active status
+func ToggleProject(c *gin.Context) {
+	idStr := c.Param("id")
+
+	_, err := db.DB.Exec("UPDATE fms_projects SET is_active = NOT is_active WHERE id = $1", idStr)
+	if err != nil {
+		c.Redirect(http.StatusSeeOther, "/settings/projects?error=Gagal+mengupdate+project")
+		return
+	}
+
+	c.Redirect(http.StatusSeeOther, "/settings/projects?success=Status+project+diupdate!")
+}
+
+// UpdateProject updates project name and code
+func UpdateProject(c *gin.Context) {
+	idStr := c.Param("id")
+	name := c.PostForm("name")
+	code := c.PostForm("code")
+
+	if name == "" || code == "" {
+		c.Redirect(http.StatusSeeOther, "/settings/projects?error=Nama+dan+kode+harus+diisi")
+		return
+	}
+
+	_, err := db.DB.Exec("UPDATE fms_projects SET name = $1, code = $2 WHERE id = $3", name, code, idStr)
+	if err != nil {
+		c.Redirect(http.StatusSeeOther, "/settings/projects?error=Gagal+mengupdate+project")
+		return
+	}
+
+	c.Redirect(http.StatusSeeOther, "/settings/projects?success=Project+berhasil+diupdate!")
+}
+
+// DeleteProject removes a project
+func DeleteProject(c *gin.Context) {
+	idStr := c.Param("id")
+
+	_, err := db.DB.Exec("DELETE FROM fms_projects WHERE id = $1", idStr)
+	if err != nil {
+		c.Redirect(http.StatusSeeOther, "/settings/projects?error=Gagal+menghapus+project")
+		return
+	}
+
+	c.Redirect(http.StatusSeeOther, "/settings/projects?success=Project+berhasil+dihapus!")
 }

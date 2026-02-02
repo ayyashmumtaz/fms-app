@@ -4,79 +4,229 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Batch Input Status - FMS</title>
-    <!-- HTMX & Toast includes -->
+    <title>Batch Input - FMS</title>
     <script src="https://unpkg.com/htmx.org@1.9.12"></script>
     <script src="/static/toast.js"></script>
     <link rel="stylesheet" href="/static/styles.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+        {{ template "header.html" . }}
+
+        <header class="app-header">
+            <div class="header-brand" style="display: flex; align-items: center; gap: 1rem;">
+                {{ if .Logo }}<img src="{{ .Logo }}" style="height: 48px; width: auto; object-fit: contain;"
+                    alt="Logo">{{ end }}
+                <div>
+                    <h1>Batch Input</h1>
+                    <p>Input status perangkat secara massal</p>
+                </div>
+            </div>
+        </header>
+
+        <form action="/batch-input" method="POST" id="batchForm">
+            <!-- Form Controls -->
+            <div class="card" style="margin-bottom: 1.5rem;">
+                <div
+                    style="display: flex; flex-wrap: wrap; gap: 1.5rem; justify-content: space-between; align-items: flex-end;">
+                    <div style="display: flex; gap: 1.5rem; flex-wrap: wrap; flex: 1;">
+                        <div class="form-field" style="min-width: 200px;">
+                            <label class="form-label required">Project Code</label>
+                            <select name="project_code" class="form-input" required>
+                                <option value="">-- Pilih Project --</option>
+                                {{ range .Projects }}
+                                <option value="{{ .Code }}">{{ .Name }}</option>
+                                {{ end }}
+                            </select>
+                        </div>
+                        <div class="form-field" style="min-width: 180px;">
+                            <label class="form-label required">Report Date</label>
+                            <input type="date" name="report_date" class="form-input" required value="{{ .TodayStr }}">
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 0.75rem;">
+                        <button type="button" onclick="selectAll(true)" class="btn btn-secondary btn-sm">
+                            <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Select All
+                        </button>
+                        <button type="button" onclick="selectAll(false)" class="btn btn-secondary btn-sm">
+                            <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Deselect All
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Batch Input Matrix -->
+            <div class="card" style="padding: 0; overflow: hidden;">
+                <div class="table-wrapper" style="border: none; border-radius: 0; max-height: 70vh;">
+                    <table class="data-table" id="batchTable">
+                        <thead>
+                            <tr>
+                                <th
+                                    style="position: sticky; left: 0; z-index: 20; background: var(--slate-50); min-width: 50px;">
+                                    <input type="checkbox" id="masterCheck" onchange="toggleMasterCheck()"
+                                        title="Pilih semua kapal">
+                                </th>
+                                <th
+                                    style="position: sticky; left: 50px; z-index: 20; background: var(--slate-50); min-width: 180px;">
+                                    Ship Name</th>
+                                {{ range .Sensors }}
+                                <th style="text-align: center; min-width: 100px;">{{ .Name }}</th>
+                                {{ end }}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{ $sensors := .Sensors }}
+                            {{ $shipSensors := .ShipSensors }}
+                            {{ range $idx, $ship := .Ships }}
+                            <tr data-ship-id="{{ $ship.ID }}">
+                                <td
+                                    style="position: sticky; left: 0; background: white; text-align: center; z-index: 10; border-right: 1px solid var(--slate-100);">
+                                    <input type="checkbox" name="ship_ids[]" value="{{ $ship.ID }}"
+                                        class="ship-checkbox" onchange="updateRowStyle(this)">
+                                </td>
+                                <td
+                                    style="position: sticky; left: 50px; background: white; z-index: 10; border-right: 1px solid var(--slate-200);">
+                                    <span class="ship-name-cell">{{ $ship.Name }}</span>
+                                    {{ if $ship.Code }}
+                                    <br><code style="font-size: 10px;">{{ $ship.Code }}</code>
+                                    {{ end }}
+                                </td>
+                                {{ $shipID := $ship.ID }}
+                                {{ range $sensors }}
+                                {{ $sensorKey := printf "%d_%s" $shipID .Code }}
+                                {{ $isEnabled := index $shipSensors $sensorKey }}
+                                <td style="text-align: center; vertical-align: middle;">
+                                    {{ if $isEnabled }}
+                                    <label class="sensor-toggle" title="Toggle {{ .Name }} untuk {{ $ship.Name }}">
+                                        <input type="checkbox" name="sensors[{{ $shipID }}][{{ .Code }}]" value="true"
+                                            checked class="sensor-input">
+                                        <span class="toggle-btn badge badge-online">ON</span>
+                                    </label>
+                                    {{ else }}
+                                    <span class="badge badge-disabled" title="Sensor tidak diaktifkan untuk kapal ini"
+                                        style="cursor: not-allowed;">
+                                        <svg style="width: 12px; height: 12px; margin-right: 2px;" fill="none"
+                                            stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636">
+                                            </path>
+                                        </svg>
+                                        N/A
+                                    </span>
+                                    {{ end }}
+                                </td>
+                                {{ end }}
+                            </tr>
+                            {{ else }}
+                            <tr>
+                                <td colspan="{{ add (len .Sensors) 2 }}" class="empty-state">
+                                    <div class="empty-state-icon">
+                                        <svg style="width: 48px; height: 48px; color: var(--slate-300);" fill="none"
+                                            stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                                d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z">
+                                            </path>
+                                        </svg>
+                                    </div>
+                                    <div>No ships registered yet.</div>
+                                    <a href="/settings/ships" class="btn btn-primary" style="margin-top: 1rem;">Add
+                                        Ships</a>
+                                </td>
+                            </tr>
+                            {{ end }}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Submit Section -->
+            <div class="card" style="margin-top: 1.5rem;">
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                    <div class="alert alert-info" style="margin: 0; flex: 1; min-width: 300px;">
+                        <svg class="alert-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <div class="alert-content">
+                            <strong>Petunjuk:</strong> Centang kapal yang akan disimpan, lalu klik toggle ON/OFF untuk
+                            setiap sensor.
+                            Sensor N/A tidak tersedia untuk kapal tersebut.
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 0.75rem; align-items: center;">
+                        <span id="selectedCount" style="font-size: 13px; color: var(--slate-500);">0 kapal
+                            dipilih</span>
+                        <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
+                            <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Simpan Status
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <footer class="footer">
+            <small>Fleet Management System &copy; 2026</small>
+        </footer>
+    </div>
+
     <style>
-        .batch-table {
-            width: 100%;
-            border-collapse: separate;
-            /* Required for sticky */
-            border-spacing: 0;
-            font-size: 13px;
-        }
-
-        .batch-table th,
-        .batch-table td {
-            border: 1px solid var(--slate-200);
-            padding: 8px;
-            vertical-align: middle;
-        }
-
-        .batch-table th {
-            background: var(--slate-50);
-            font-weight: 600;
-            color: var(--slate-700);
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        /* Sticky First Column (Ship Name) */
-        .batch-table th:nth-child(2),
-        .batch-table td:nth-child(2) {
-            position: sticky;
-            left: 0;
-            z-index: 15;
-            /* Higher than normal cells */
-            background: white;
-            border-right: 2px solid var(--slate-200);
-        }
-
-        .batch-table th:nth-child(2) {
-            z-index: 20;
-            /* Higher than headers */
-            background: var(--slate-50);
-        }
-
-        .batch-input-wrapper {
-            max-height: 70vh;
-            overflow: auto;
-            border: 1px solid var(--slate-200);
-            border-radius: 8px;
-            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
-            position: relative;
-        }
-
-        /* Checkbox styling */
-        input[type="checkbox"] {
-            width: 16px;
-            height: 16px;
+        .sensor-toggle {
+            display: inline-block;
             cursor: pointer;
-            accent-color: var(--primary-600);
         }
 
-        tr:hover td {
-            background-color: var(--slate-50);
+        .sensor-toggle .sensor-input {
+            display: none;
         }
 
-        /* Ensure sticky column keeps its background on hover if needed, 
-           or let it blend. We set bg white above, so we might need td:hover override */
-        tr:hover td:nth-child(2) {
-            background-color: var(--slate-50);
+        .sensor-toggle .toggle-btn {
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .sensor-toggle .sensor-input:not(:checked)+.toggle-btn {
+            background: linear-gradient(135deg, var(--error-100), var(--error-50)) !important;
+            color: var(--error-700) !important;
+            border-color: var(--error-200) !important;
+        }
+
+        .sensor-toggle .sensor-input:not(:checked)+.toggle-btn::after {
+            content: 'OFF';
+        }
+
+        .sensor-toggle .sensor-input:not(:checked)+.toggle-btn::before {
+            display: none;
+        }
+
+        .sensor-toggle .sensor-input:checked+.toggle-btn::after {
+            content: 'ON';
+        }
+
+        .sensor-toggle:hover .toggle-btn {
+            transform: scale(1.05);
+        }
+
+        tr[data-ship-id] {
+            transition: background-color 0.2s ease;
         }
 
         tr.selected {
@@ -87,132 +237,64 @@
             background-color: var(--primary-50) !important;
         }
 
-        .cell-inactive {
-            background-color: #f8fafc !important;
-            color: #cbd5e1 !important;
+        tr.selected td:first-child,
+        tr.selected td:nth-child(2) {
+            background-color: var(--primary-50) !important;
         }
     </style>
-</head>
-
-<body>
-    <div class="container">
-        <!-- Navigation -->
-        <!-- Navigation -->
-        {{ template "header.html" . }}
-
-        <header class="app-header">
-            <div class="header-brand" style="display: flex; align-items: center; gap: 1rem;">
-                {{ if .Logo }}<img src="{{ .Logo }}" style="height: 50px; width: auto; object-fit: contain;"
-                    alt="Logo">{{ end }}
-                <div>
-                    <h1>Batch Sensor Status</h1>
-                    <p>Input massal status sensor (Online/Offline) per kapal.</p>
-                </div>
-            </div>
-        </header>
-
-        <form action="/batch-input" method="POST" class="card">
-            <div class="form-grid"
-                style="grid-template-columns: 1fr 1fr 1fr auto; align-items: end; margin-bottom: 2rem; gap: 1rem;">
-                <div class="form-field">
-                    <label class="form-label required">Periode Laporan</label>
-                    <input type="month" name="report_period" class="form-input" required value="{{ .CurrentPeriod }}">
-                </div>
-                <div class="form-field">
-                    <label class="form-label">Kode Proyek (Optional)</label>
-                    <select name="project_code" class="form-input">
-                        {{ range .Projects }}
-                        <option value="{{ .Code }}">{{ .Code }} - {{ .Name }}</option>
-                        {{ end }}
-                    </select>
-                </div>
-                <div class="form-field"></div>
-                <div class="form-field">
-                    <button type="submit" class="btn btn-primary" style="min-width: 160px; height: 42px;">💾 Simpan
-                        Status</button>
-                </div>
-            </div>
-
-            <div class="batch-input-wrapper">
-                <table class="batch-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 40px; text-align: center;">✅</th>
-                            <th style="min-width: 180px;">Nama Kapal</th>
-                            <!-- Dynamic Columns -->
-                            {{ range .Columns }}
-                            <th style="min-width: 80px; text-align: center; white-space: nowrap;" title="{{ .Name }}">{{
-                                .Name }}</th>
-                            {{ end }}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {{ range .Ships }}
-                        <tr onclick="toggleRow(this)">
-                            <td style="text-align: center;">
-                                <input type="checkbox" name="status_{{ .ID }}" value="on"
-                                    onclick="event.stopPropagation()">
-                            </td>
-                            <td style="font-weight: 500;">{{ .Name }}</td>
-
-                            {{ $shipID := .ID }}
-                            {{ $config := .Config }}
-
-                            {{ range $.Columns }}
-                            {{ $active := index $config .Code }}
-                            <td class="{{ if not $active }}cell-inactive{{ end }}" style="text-align: center;">
-                                {{ if $active }}
-                                <input type="checkbox" name="sensor_{{ $shipID }}_{{ .Code }}" value="on"
-                                    onclick="event.stopPropagation()">
-                                {{ else }}
-                                <span style="font-size: 10px;">✕</span>
-                                {{ end }}
-                            </td>
-                            {{ end }}
-                        </tr>
-                        {{ end }}
-                    </tbody>
-                </table>
-            </div>
-
-            <div
-                style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem; color: var(--slate-500); font-size: 13px;">
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <span class="info-icon">ℹ️</span>
-                    <span>Centang kolom <strong>✅</strong> untuk menyertakan kapal dalam laporan.</span>
-                </div>
-                <div>
-                    Centang kotak pada matriks untuk menandakan status sensor <strong>ONLINE / AKTIF</strong>. Kotak
-                    tanpa centang berarti <strong>OFFLINE</strong>. <br>
-                    Tanda <strong>✕</strong> berarti sensor dinonaktifkan untuk kapal tersebut di pengaturan.
-                </div>
-            </div>
-        </form>
-
-        <footer class="footer" style="margin-top: 3rem;">
-            <small>Device Performance Reporting System &copy; 2025</small>
-        </footer>
-    </div>
 
     <script>
-        function toggleRow(tr) {
-            const checkbox = tr.querySelector('input[name^="status_"]');
-            if (checkbox) {
-                checkbox.checked = !checkbox.checked;
-                updateRowStyle(tr, checkbox.checked);
+        Toast.init();
+
+        function updateSelectedCount() {
+            const checked = document.querySelectorAll('.ship-checkbox:checked').length;
+            const total = document.querySelectorAll('.ship-checkbox').length;
+            document.getElementById('selectedCount').textContent = checked + ' kapal dipilih';
+            document.getElementById('submitBtn').disabled = checked === 0;
+            document.getElementById('masterCheck').checked = checked === total && total > 0;
+            document.getElementById('masterCheck').indeterminate = checked > 0 && checked < total;
+        }
+
+        function updateRowStyle(checkbox) {
+            const row = checkbox.closest('tr');
+            if (checkbox.checked) {
+                row.classList.add('selected');
+            } else {
+                row.classList.remove('selected');
             }
+            updateSelectedCount();
         }
 
-        function updateRowStyle(tr, checked) {
-            if (checked) tr.classList.add('selected');
-            else tr.classList.remove('selected');
-        }
-
-        document.querySelectorAll('input[type="checkbox"][name^="status_"]').forEach(cb => {
-            cb.addEventListener('change', function (e) {
-                e.stopPropagation();
-                updateRowStyle(this.closest('tr'), this.checked);
+        function toggleMasterCheck() {
+            const master = document.getElementById('masterCheck');
+            document.querySelectorAll('.ship-checkbox').forEach(cb => {
+                cb.checked = master.checked;
+                updateRowStyle(cb);
             });
+        }
+
+        function selectAll(checked) {
+            document.querySelectorAll('.ship-checkbox').forEach(cb => {
+                cb.checked = checked;
+                updateRowStyle(cb);
+            });
+        }
+
+        // Initial count
+        updateSelectedCount();
+
+        // Form submission confirmation
+        document.getElementById('batchForm').addEventListener('submit', function (e) {
+            const selected = document.querySelectorAll('.ship-checkbox:checked').length;
+            if (selected === 0) {
+                e.preventDefault();
+                showToast('Pilih minimal satu kapal terlebih dahulu!', 'error');
+                return;
+            }
+
+            if (!confirm('Simpan status untuk ' + selected + ' kapal?')) {
+                e.preventDefault();
+            }
         });
     </script>
 </body>

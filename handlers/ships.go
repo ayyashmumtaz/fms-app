@@ -59,7 +59,44 @@ func CreateShip(c *gin.Context) {
 		return
 	}
 
-	c.Redirect(http.StatusSeeOther, "/settings/ships?success=Kapal+berhasil+ditambahkan!+🚢")
+	c.Redirect(http.StatusSeeOther, "/settings/ships?success=Kapal+berhasil+ditambahkan!")
+}
+
+// UpdateShip updates an existing ship
+func UpdateShip(c *gin.Context) {
+	idStr := c.Param("id")
+	name := c.PostForm("name")
+	code := c.PostForm("code")
+
+	if name == "" {
+		c.Redirect(http.StatusSeeOther, "/settings/ships?error=Nama+kapal+harus+diisi")
+		return
+	}
+
+	_, err := db.DB.Exec("UPDATE fms_ships SET name = $1, code = $2 WHERE id = $3", name, code, idStr)
+	if err != nil {
+		c.Redirect(http.StatusSeeOther, "/settings/ships?error=Gagal+mengupdate+kapal")
+		return
+	}
+
+	c.Redirect(http.StatusSeeOther, "/settings/ships?success=Kapal+berhasil+diupdate!")
+}
+
+// DeleteShip deletes a ship
+func DeleteShip(c *gin.Context) {
+	idStr := c.Param("id")
+
+	// First delete any sensor configurations for this ship
+	_, _ = db.DB.Exec("DELETE FROM fms_ship_sensors WHERE ship_id = $1", idStr)
+
+	// Then delete the ship
+	_, err := db.DB.Exec("DELETE FROM fms_ships WHERE id = $1", idStr)
+	if err != nil {
+		c.Redirect(http.StatusSeeOther, "/settings/ships?error=Gagal+menghapus+kapal")
+		return
+	}
+
+	c.Redirect(http.StatusSeeOther, "/settings/ships?success=Kapal+berhasil+dihapus!")
 }
 
 // SettingsShipConfigPage renders the sensor configuration for a specific ship

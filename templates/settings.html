@@ -4,121 +4,151 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Sensor Settings - FMS</title>
+    <title>Device Sensors - FMS</title>
     <script src="https://unpkg.com/htmx.org@1.9.12"></script>
     <script src="/static/toast.js"></script>
     <link rel="stylesheet" href="/static/styles.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        .sidebar-link {
-            display: block;
-            padding: 0.75rem 1rem;
-            color: var(--slate-600);
-            text-decoration: none;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-
-        .sidebar-link:hover:not(.disabled) {
-            background-color: var(--slate-50);
-            color: var(--slate-900);
-        }
-
-        .sidebar-link.active {
-            background-color: var(--primary-50);
-            color: var(--primary-700);
-            font-weight: 600;
-        }
-
-        html {
-            scroll-behavior: smooth;
-        }
-    </style>
 </head>
 
 <body>
     <div class="container">
-        <!-- Navigation -->
-        <!-- Navigation -->
         {{ template "header.html" . }}
 
         <header class="app-header">
             <div class="header-brand" style="display: flex; align-items: center; gap: 1rem;">
-                {{ if .Logo }}<img src="{{ .Logo }}" style="height: 50px; width: auto; object-fit: contain;"
+                {{ if .Logo }}<img src="{{ .Logo }}" style="height: 48px; width: auto; object-fit: contain;"
                     alt="Logo">{{ end }}
                 <div>
-                    <h1>⚙️ Settings</h1>
-                    <p>Pusat konfigurasi sistem aplikasi</p>
+                    <h1>Settings</h1>
+                    <p>Pusat konfigurasi sistem aplikasi FMS</p>
                 </div>
             </div>
         </header>
 
-        <!-- Layout Grid -->
         <div style="display: grid; grid-template-columns: 240px 1fr; gap: 2rem; align-items: start;">
-
-            <!-- Sidebar -->
             {{ template "sidebar.html" . }}
 
-            <!-- Main Content -->
             <main>
-                <!-- SECTION: DEVICE SENSORS -->
-                <div class="card">
-                    <div style="border-bottom: 1px solid var(--slate-100); padding-bottom: 1rem; margin-bottom: 1rem;">
-                        <h3 class="card-title" style="margin: 0;">Device Sensors</h3>
-                        <p style="color: var(--slate-500); font-size: 13px; margin-top: 0.25rem;">Konfigurasi parameter
-                            sensor yang dipantau dalam laporan harian.</p>
+                <!-- Add Sensor Card -->
+                <div class="card" style="margin-bottom: 1.5rem;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
+                        <div
+                            style="width: 36px; height: 36px; background: var(--primary-100); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                            <svg style="width: 18px; height: 18px; color: var(--primary-600);" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="card-title" style="margin: 0;">Add New Sensor</h3>
+                            <p style="color: var(--slate-500); font-size: 13px; margin: 0;">Konfigurasi parameter sensor
+                                yang dipantau</p>
+                        </div>
                     </div>
 
-                    <!-- Add Sensor Form -->
-                    <form action="/settings/sensors" method="POST" class="form-grid"
-                        style="grid-template-columns: 1fr auto; align-items: end; background: var(--slate-50); padding: 1rem; border-radius: 8px; border: 1px dashed var(--slate-300); margin-bottom: 1.5rem;">
+                    <form action="/settings/sensors" method="POST"
+                        style="display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: end; background: var(--slate-50); padding: 1.25rem; border-radius: 12px; border: 1px dashed var(--slate-300);">
                         <div class="form-field">
-                            <label class="form-label required" style="font-size: 12px;">Nama Sensor Baru</label>
+                            <label class="form-label required">Sensor Name</label>
                             <input type="text" name="name" class="form-input" placeholder="e.g. Fuel Temperature"
                                 required>
+                            <span class="form-help">Kode sensor akan digenerate otomatis</span>
                         </div>
                         <div class="form-field">
-                            <button type="submit" class="btn btn-primary" style="height: 38px;">+ Tambah Sensor</button>
+                            <button type="submit" class="btn btn-primary" style="height: 42px;">
+                                <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                </svg>
+                                Add Sensor
+                            </button>
                         </div>
                     </form>
+                </div>
 
-                    <!-- Sensor Table -->
+                <!-- Sensor List Card -->
+                <div class="card">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <div
+                                style="width: 36px; height: 36px; background: var(--success-100); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                <svg style="width: 18px; height: 18px; color: var(--success-600);" fill="none"
+                                    stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                                    </path>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="card-title" style="margin: 0;">Device Sensors</h3>
+                                <p style="color: var(--slate-500); font-size: 13px; margin: 0;">{{ len .Sensors }}
+                                    sensors configured</p>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="table-wrapper">
-                        <table class="data-table" style="width: 100%;">
+                        <table class="data-table">
                             <thead>
                                 <tr>
-                                    <th style="width: 60px;">ID</th>
-                                    <th>Kode (Slug)</th>
-                                    <th>Nama Tampilan</th>
-                                    <th style="width: 80px; text-align: center;">Order</th>
-                                    <th style="width: 100px; text-align: center;">Action</th>
+                                    <th style="width: 60px;">Order</th>
+                                    <th>Code</th>
+                                    <th>Display Name</th>
+                                    <th style="text-align: center;">Status</th>
+                                    <th style="text-align: right; width: 200px;">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {{ range .Sensors }}
-                                <tr>
-                                    <td style="color: var(--slate-500);">#{{ .ID }}</td>
-                                    <td><code
-                                            style="background: var(--slate-100); padding: 2px 4px; border-radius: 4px; font-size: 12px;">{{ .Code }}</code>
-                                    </td>
-                                    <td style="font-weight: 500;">{{ .Name }}</td>
-                                    <td style="text-align: center;">{{ .DisplayOrder }}</td>
+                                <tr id="sensor-row-{{ .ID }}">
+                                    <td style="color: var(--slate-400);">#{{ .DisplayOrder }}</td>
+                                    <td><code>{{ .Code }}</code></td>
+                                    <td class="ship-name-cell">{{ .Name }}</td>
                                     <td style="text-align: center;">
-                                        <form action="/settings/sensors/{{ .ID }}/toggle" method="POST"
-                                            style="margin: 0;">
-                                            <button type="submit" class="btn btn-secondary"
-                                                style="padding: 0.25rem 0.75rem; font-size: 12px; border-color: var(--slate-300);">
-                                                {{ if .IsActive }}Disable{{ else }}Enable{{ end }}
+                                        {{ if .IsActive }}
+                                        <span class="badge badge-success">Active</span>
+                                        {{ else }}
+                                        <span class="badge badge-disabled">Inactive</span>
+                                        {{ end }}
+                                    </td>
+                                    <td style="text-align: right;">
+                                        <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                                            <form action="/settings/sensors/{{ .ID }}/toggle" method="POST"
+                                                style="margin: 0;">
+                                                <button type="submit"
+                                                    class="btn btn-sm {{ if .IsActive }}btn-secondary{{ else }}btn-success{{ end }}">
+                                                    {{ if .IsActive }}Disable{{ else }}Enable{{ end }}
+                                                </button>
+                                            </form>
+                                            <button type="button" class="btn btn-sm btn-secondary edit-btn"
+                                                data-id="{{ .ID }}" data-name="{{ .Name }}"
+                                                data-order="{{ .DisplayOrder }}">
+                                                Edit
                                             </button>
-                                        </form>
+                                            <button type="button" class="btn btn-sm btn-danger delete-btn"
+                                                data-id="{{ .ID }}" data-name="{{ .Name }}">
+                                                Delete
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                                 {{ else }}
                                 <tr>
-                                    <td colspan="5" style="text-align: center; color: var(--slate-400); padding: 2rem;">
-                                        Belum ada sensor dikonfigurasi.</td>
+                                    <td colspan="5" class="empty-state">
+                                        <div class="empty-state-icon">
+                                            <svg style="width: 48px; height: 48px; color: var(--slate-300);" fill="none"
+                                                stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                                    d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                                                </path>
+                                            </svg>
+                                        </div>
+                                        <div>No sensors configured yet. Add your first sensor above.</div>
+                                    </td>
                                 </tr>
                                 {{ end }}
                             </tbody>
@@ -128,12 +158,114 @@
             </main>
         </div>
 
-        <footer class="footer" style="margin-top: 3rem;">
-            <small>Device Performance Reporting System &copy; 2025</small>
+        <footer class="footer">
+            <small>Fleet Management System &copy; 2026</small>
         </footer>
     </div>
+
+    <!-- Edit Sensor Modal -->
+    <div class="modal-overlay" id="editModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Edit Sensor</h3>
+                <button type="button" class="modal-close" onclick="closeEditModal()">×</button>
+            </div>
+            <form id="editForm" method="POST">
+                <div class="modal-body">
+                    <div class="form-field" style="margin-bottom: 1rem;">
+                        <label class="form-label required">Display Name</label>
+                        <input type="text" name="name" id="editSensorName" class="form-input" required>
+                    </div>
+                    <div class="form-field">
+                        <label class="form-label">Display Order</label>
+                        <input type="number" name="display_order" id="editSensorOrder" class="form-input" min="1">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Delete Sensor</h3>
+                <button type="button" class="modal-close" onclick="closeDeleteModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning" style="margin-bottom: 0;">
+                    <div class="alert-content">
+                        <div class="alert-title">Confirm Deletion</div>
+                        Are you sure you want to delete <strong id="deleteSensorName"></strong>?
+                        This will remove the sensor from all reports.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+                <form id="deleteForm" method="POST" style="margin: 0;">
+                    <button type="submit" class="btn btn-danger">Delete Sensor</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script>
         Toast.init();
+
+        // Edit button handlers
+        document.querySelectorAll('.edit-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const id = this.dataset.id;
+                const name = this.dataset.name;
+                const order = this.dataset.order;
+
+                document.getElementById('editSensorName').value = name;
+                document.getElementById('editSensorOrder').value = order;
+                document.getElementById('editForm').action = '/settings/sensors/' + id + '/update';
+                document.getElementById('editModal').classList.add('active');
+            });
+        });
+
+        // Delete button handlers  
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const id = this.dataset.id;
+                const name = this.dataset.name;
+
+                document.getElementById('deleteSensorName').textContent = name;
+                document.getElementById('deleteForm').action = '/settings/sensors/' + id + '/delete';
+                document.getElementById('deleteModal').classList.add('active');
+            });
+        });
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('active');
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('active');
+        }
+
+        // Close modal on overlay click
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', function (e) {
+                if (e.target === this) {
+                    this.classList.remove('active');
+                }
+            });
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
+            }
+        });
     </script>
 </body>
 

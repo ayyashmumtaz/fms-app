@@ -4,45 +4,63 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Input Data - Device Performance</title>
+  <title>Input Data - FMS</title>
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
   <script src="/static/toast.js"></script>
   <link rel="stylesheet" href="/static/styles.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 
 <body>
   <div class="container">
-    <!-- Navigation -->
-    <!-- Navigation -->
     {{ template "header.html" . }}
 
     <header class="app-header">
       <div class="header-brand" style="display: flex; align-items: center; gap: 1rem;">
-        {{ if .Logo }}<img src="{{ .Logo }}" style="height: 50px; width: auto; object-fit: contain;" alt="Logo">{{ end
+        {{ if .Logo }}<img src="{{ .Logo }}" style="height: 48px; width: auto; object-fit: contain;" alt="Logo">{{ end
         }}
         <div>
-          <h1>Daily Report Performance Device</h1>
-          <p>Sistem pelaporan status perangkat kapal secara real-time</p>
+          <h1>Input Satuan</h1>
+          <p>Tambah data perangkat kapal individual</p>
         </div>
       </div>
     </header>
 
     <!-- Input Form -->
     <div class="card">
-      <h2>Tambah Data Kapal Baru</h2>
+      <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
+        <div
+          style="width: 40px; height: 40px; background: var(--primary-100); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+          <svg style="width: 22px; height: 22px; color: var(--primary-600);" fill="none" stroke="currentColor"
+            viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+          </svg>
+        </div>
+        <div>
+          <h3 class="card-title" style="margin: 0;">Tambah Data Kapal Baru</h3>
+          <p style="color: var(--slate-500); font-size: 13px; margin: 0;">Isi form berikut untuk menambahkan laporan
+            status perangkat</p>
+        </div>
+      </div>
 
-      <form hx-post="/reports" hx-swap="none" hx-on::after-request="if(event.detail.successful){ this.reset(); }">
+      <form hx-post="/reports" hx-swap="none"
+        hx-on::after-request="if(event.detail.successful){ this.reset(); showToast('Data berhasil disimpan!', 'success'); }">
 
         <!-- Basic Info Section -->
         <div class="form-section">
-          <div class="form-section-title">Informasi Dasar</div>
+          <div class="form-section-title">
+            <svg style="width: 18px; height: 18px; margin-right: 0.5rem;" fill="none" stroke="currentColor"
+              viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            Informasi Dasar
+          </div>
           <div class="form-grid">
             <div class="form-field">
               <label class="form-label required">Project</label>
               <select name="project_code" class="form-input" required>
+                <option value="" disabled selected>Pilih Project...</option>
                 {{ range .Projects }}
                 <option value="{{ .Code }}">{{ .Code }} - {{ .Name }}</option>
                 {{ end }}
@@ -67,21 +85,21 @@
                 <option value="{{ .ID }}">{{ .Name }}</option>
                 {{ end }}
               </select>
-              <script>
-                function loadSensors(id) {
-                  fetch('/api/form-sensors?ship_id=' + id)
-                    .then(r => r.text())
-                    .then(h => document.getElementById('sensor-form-container').innerHTML = h)
-                    .catch(e => console.error("Error loading sensors", e));
-                }
-              </script>
             </div>
           </div>
         </div>
 
         <!-- Device Status Section -->
         <div class="form-section">
-          <div class="form-section-title">Status Perangkat</div>
+          <div class="form-section-title">
+            <svg style="width: 18px; height: 18px; margin-right: 0.5rem;" fill="none" stroke="currentColor"
+              viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+              </path>
+            </svg>
+            Status Perangkat
+          </div>
           <div id="sensor-form-container" class="form-grid"
             style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
             {{ if .Sensors }}
@@ -89,43 +107,71 @@
             <div class="form-field">
               <label class="form-label">{{ .Name }}</label>
               <select name="sensor_{{ .Code }}" class="form-input">
-                <option value="on">🟢 Online</option>
-                <option value="off">🔴 Offline</option>
+                <option value="on">✓ Online</option>
+                <option value="off">✗ Offline</option>
               </select>
             </div>
             {{ end }}
             {{ else }}
-            <div
-              style="grid-column: 1 / -1; padding: 3rem; text-align: center; color: #64748b; background: #f8fafc; border-radius: 8px; border: 2px dashed #cbd5e1;">
-              <div style="font-size: 2rem; margin-bottom: 0.5rem;">🚢</div>
-              <p>Silakan <strong>Pilih Kapal</strong> terlebih dahulu untuk konfigurasi sensor.</p>
+            <div class="empty-state"
+              style="grid-column: 1 / -1; padding: 3rem; text-align: center; border-radius: var(--radius-lg); border: 2px dashed var(--slate-300); background: var(--slate-50);">
+              <div class="empty-state-icon">
+                <svg style="width: 48px; height: 48px; color: var(--slate-300);" fill="none" stroke="currentColor"
+                  viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                    d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"></path>
+                </svg>
+              </div>
+              <p style="color: var(--slate-600); margin: 0;">Silakan <strong>Pilih Kapal</strong> terlebih
+                dahulu untuk konfigurasi sensor.</p>
             </div>
             {{ end }}
           </div>
         </div>
 
         <!-- Actions -->
-        <div class="button-group">
-          <button type="reset" class="btn btn-secondary">🔄 Reset</button>
-          <button type="submit" class="btn btn-primary">💾 Simpan Data</button>
+        <div class="button-group" style="margin-top: 2rem;">
+          <button type="reset" class="btn btn-secondary">
+            <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+              </path>
+            </svg>
+            Reset
+          </button>
+          <button type="submit" class="btn btn-primary">
+            <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4">
+              </path>
+            </svg>
+            Simpan Data
+          </button>
         </div>
       </form>
     </div>
 
-
-
-    <!-- Footer -->
     <footer class="footer">
-      <small>Device Performance Reporting System &copy; 2025</small>
+      <small>Fleet Management System &copy; 2026</small>
     </footer>
   </div>
 
   <script>
-    // Initialize filters on page load
+    Toast.init();
+
+    function loadSensors(id) {
+      fetch('/api/form-sensors?ship_id=' + id)
+        .then(r => r.text())
+        .then(h => document.getElementById('sensor-form-container').innerHTML = h)
+        .catch(e => {
+          console.error("Error loading sensors", e);
+          showToast('Gagal memuat sensor', 'error');
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
-      // Set default value for report period input
       const today = new Date();
-      const monthStr = today.toISOString().slice(0, 7); // YYYY-MM
+      const monthStr = today.toISOString().slice(0, 7);
       const periodInput = document.getElementById('input-report-period');
       if (periodInput) {
         periodInput.value = monthStr;

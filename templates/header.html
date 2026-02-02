@@ -1,10 +1,47 @@
 <div class="header-nav-container">
     <nav class="nav-tabs">
-        <a href="/" class="nav-tab {{ if eq .ActiveTab " dashboard" }}active{{ end }}">📊 Dashboard</a>
-        <a href="/input" class="nav-tab {{ if eq .ActiveTab " input" }}active{{ end }}">📥 Input Data Satuan</a>
-        <a href="/batch-input" class="nav-tab {{ if eq .ActiveTab " batch" }}active{{ end }}">📦 Batch Input</a>
-        <a href="/report" class="nav-tab {{ if eq .ActiveTab " report" }}active{{ end }}">📑 Laporan Detail</a>
-        <a href="/settings" class="nav-tab {{ if eq .ActiveTab " settings" }}active{{ end }}">⚙️ Settings</a>
+        <a href="/" class="nav-tab {{ if eq .ActiveTab "dashboard" }}active{{ end }}">
+            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z">
+                </path>
+            </svg>
+            Dashboard
+        </a>
+        <a href="/input" class="nav-tab {{ if eq .ActiveTab "input" }}active{{ end }}">
+            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
+                </path>
+            </svg>
+            Input Satuan
+        </a>
+        <a href="/batch-input" class="nav-tab {{ if eq .ActiveTab "batch" }}active{{ end }}">
+            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01">
+                </path>
+            </svg>
+            Batch Input
+        </a>
+        <a href="/report" class="nav-tab {{ if eq .ActiveTab "report" }}active{{ end }}">
+            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                </path>
+            </svg>
+            Laporan
+        </a>
+        <a href="/settings" class="nav-tab {{ if eq .ActiveTab "settings" }}active{{ end }}">
+            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
+                </path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z">
+                </path>
+            </svg>
+            Settings
+        </a>
     </nav>
 
     <div id="notification-area" hx-get="/api/notification-count" hx-trigger="load, every 30s" hx-swap="innerHTML">
@@ -19,10 +56,11 @@
         align-items: center;
         width: 100%;
         margin-bottom: var(--space-6);
+        gap: var(--space-4);
     }
 
     .notification-pill {
-        background: #fee2e2;
+        background: linear-gradient(135deg, #fee2e2, #fecaca);
         border: 1px solid #fca5a5;
         color: #b91c1c;
         padding: 0.5rem 1rem;
@@ -30,20 +68,22 @@
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        font-weight: 700;
+        font-weight: 600;
         font-size: 13px;
         box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.1);
         transition: all 0.2s;
+        text-decoration: none;
     }
 
     .notification-pill:hover {
-        transform: translateY(-1px);
+        transform: translateY(-2px);
         box-shadow: 0 6px 10px -1px rgba(220, 38, 38, 0.15);
-        background: #fecaca;
+        background: linear-gradient(135deg, #fecaca, #fca5a5);
     }
 
     .notification-icon {
-        font-size: 16px;
+        width: 18px;
+        height: 18px;
     }
 
     .blink-alert {
@@ -51,16 +91,11 @@
     }
 
     @keyframes blink {
-        0% {
+        0%, 100% {
             opacity: 1;
         }
-
         50% {
-            opacity: 0.6;
-        }
-
-        100% {
-            opacity: 1;
+            opacity: 0.5;
         }
     }
 
@@ -74,6 +109,7 @@
         .nav-tabs {
             width: 100%;
             overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
     }
 </style>

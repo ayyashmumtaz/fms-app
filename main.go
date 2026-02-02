@@ -49,6 +49,9 @@ func main() {
 	r.GET("/reports", handlers.ListReports)
 	r.POST("/reports", handlers.CreateReport)
 	r.DELETE("/reports/:id", handlers.DeleteReport)
+	r.POST("/report/:id/delete", handlers.DeleteReport) // Add this line
+	r.GET("/reports/:id/edit", handlers.EditReportPage)
+	r.POST("/reports/:id/update", handlers.UpdateReportFull)
 	r.PUT("/reports/:id", handlers.UpdateReport)
 
 	// Rekap
@@ -66,13 +69,20 @@ func main() {
 	r.POST("/settings/logo", handlers.UpdateLogo)
 	r.POST("/settings/sensors", handlers.CreateSensor)
 	r.POST("/settings/sensors/:id/toggle", handlers.ToggleSensor)
+	r.POST("/settings/sensors/:id/update", handlers.UpdateSensor)
+	r.POST("/settings/sensors/:id/delete", handlers.DeleteSensor)
 	r.POST("/settings/projects", handlers.CreateProject)
+	r.POST("/settings/projects/:id/toggle", handlers.ToggleProject)
+	r.POST("/settings/projects/:id/update", handlers.UpdateProject)
+	r.POST("/settings/projects/:id/delete", handlers.DeleteProject)
 
 	// Ship Management
 	r.GET("/settings/ships", handlers.SettingsShipsPage)
 	r.POST("/settings/ships", handlers.CreateShip)
 	r.GET("/settings/ships/:id", handlers.SettingsShipConfigPage)
 	r.POST("/settings/ships/:id/toggle", handlers.ToggleShipSensor)
+	r.POST("/settings/ships/:id/update", handlers.UpdateShip)
+	r.POST("/settings/ships/:id/delete", handlers.DeleteShip)
 
 	// Batch Input
 	r.GET("/batch-input", handlers.BatchInputPage)

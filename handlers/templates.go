@@ -32,5 +32,11 @@ func TemplateFuncs() template.FuncMap {
 		"isTrue": func(b *bool) bool {
 			return b != nil && *b
 		},
+		"add": func(a, b int) int {
+			return a + b
+		},
+		"sub": func(a, b int) int {
+			return a - b
+		},
 	}
 }

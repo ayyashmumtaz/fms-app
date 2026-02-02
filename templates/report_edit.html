@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="id">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Edit Report - FMS</title>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <script src="/static/toast.js"></script>
+    <link rel="stylesheet" href="/static/styles.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+        {{ template "header.html" . }}
+
+        <header class="app-header">
+            <div class="header-brand" style="display: flex; align-items: center; gap: 1rem;">
+                {{ if .Logo }}<img src="{{ .Logo }}" style="height: 48px; width: auto; object-fit: contain;"
+                    alt="Logo">{{ end }}
+                <div>
+                    <h1>Edit Laporan</h1>
+                    <p>Perbarui detail laporan perangkat kapal</p>
+                </div>
+            </div>
+            <a href="/report" class="btn btn-secondary">
+                <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Kembali
+            </a>
+        </header>
+
+        <!-- Input Form -->
+        <div class="card">
+            <form action="/reports/{{ .Report.ID }}/update" method="POST">
+
+                <!-- Basic Info Section -->
+                <div class="form-section">
+                    <div class="form-section-title">
+                        <svg style="width: 18px; height: 18px; margin-right: 0.5rem;" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Informasi Dasar
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label class="form-label required">Project</label>
+                            <select name="project_code" class="form-input" required>
+                                {{ range .Projects }}
+                                <option value="{{ .Code }}" {{ if eq .Code $.ProjectCode }}selected{{ end }}>{{ .Code }}
+                                    - {{ .Name }}</option>
+                                {{ end }}
+                            </select>
+                        </div>
+
+                        <div class="form-field">
+                            <label class="form-label required">Periode Laporan</label>
+                            <input type="month" name="report_period" class="form-input" value="{{ .FormattedPeriod }}"
+                                required />
+                        </div>
+
+                        <div class="form-field">
+                            <label class="form-label required">Tanggal Laporan</label>
+                            <input type="date" name="report_date" class="form-input" value="{{ .FormattedDate }}"
+                                required />
+                        </div>
+
+                        <div class="form-field">
+                            <label class="form-label required">Nama Kapal</label>
+                            <!-- Disable ship change to avoid complexity or allow it? 
+                                 If we allow, fetch sensors via JS again? 
+                                 Let's allow it but warn user that sensors might change.
+                                 Or simpler: Just render selector. If user changes ship, we should reload sensors via JS. -->
+                            <select name="ship_id" class="form-input" required onchange="loadSensors(this.value)">
+                                {{ range .Ships }}
+                                <option value="{{ .ID }}" {{ if eq .ID $.CurrentShipID }}selected{{ end }}>{{ .Name }}
+                                </option>
+                                {{ end }}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Device Status Section -->
+                <div class="form-section">
+                    <div class="form-section-title">
+                        <svg style="width: 18px; height: 18px; margin-right: 0.5rem;" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                            </path>
+                        </svg>
+                        Status Perangkat
+                    </div>
+                    <div id="sensor-form-container" class="form-grid"
+                        style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+
+                        <!-- Initial Render from Server -->
+                        {{ range .Sensors }}
+                        <div class="form-field">
+                            <label class="form-label">{{ .Name }}</label>
+                            <select name="sensor_{{ .Code }}" class="form-input">
+                                <option value="on" {{ if .IsOn }}selected{{ end }}>✓ Online</option>
+                                <option value="off" {{ if not .IsOn }}selected{{ end }}>✗ Offline</option>
+                            </select>
+                        </div>
+                        {{ else }}
+                        <div class="empty-state" style="grid-column: 1 / -1; padding: 2rem;">
+                            No sensors configured for this ship.
+                        </div>
+                        {{ end }}
+
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="button-group" style="margin-top: 2rem;">
+                    <a href="/report" class="btn btn-secondary">Batal</a>
+                    <button type="submit" class="btn btn-primary">
+                        <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4">
+                            </path>
+                        </svg>
+                        Simpan Perubahan
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <footer class="footer">
+            <small>Fleet Management System &copy; 2026</small>
+        </footer>
+    </div>
+
+    <script>
+        Toast.init();
+
+        // Check for error/success params
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('error')) {
+            Toast.show(urlParams.get('error'), 'error');
+        }
+
+        function loadSensors(id) {
+            // Note: This will load sensors with DEFAULT/Empty status, removing current values.
+            // Warn user or accept it? Accepted behavior when changing ship - params reset.
+            fetch('/api/form-sensors?ship_id=' + id)
+                .then(r => r.text())
+                .then(h => document.getElementById('sensor-form-container').innerHTML = h)
+                .catch(e => {
+                    console.error("Error loading sensors", e);
+                    showToast('Gagal memuat sensor', 'error');
+                });
+        }
+    </script>
+</body>
+
+</html>

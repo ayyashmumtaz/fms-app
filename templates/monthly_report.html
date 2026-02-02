@@ -4,117 +4,184 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Detailed Report - FMS Performance</title>
+    <title>Laporan Detail - FMS</title>
     <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <script src="/static/toast.js"></script>
     <link rel="stylesheet" href="/static/styles.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 
 <body>
     <div class="container">
-        <!-- Navigation -->
-        <!-- Navigation -->
         {{ template "header.html" . }}
 
-        <!-- Header & Filter -->
-        <header class="app-header" style="justify-content: space-between; gap: 2rem;">
-            <div class="header-brand">
-                {{ if .Logo }}<img src="{{ .Logo }}" style="height: 50px; width: auto; object-fit: contain;"
+        <header class="app-header">
+            <div class="header-brand" style="display: flex; align-items: center; gap: 1rem;">
+                {{ if .Logo }}<img src="{{ .Logo }}" style="height: 48px; width: auto; object-fit: contain;"
                     alt="Logo">{{ end }}
                 <div>
-                    <h1>Laporan Bulanan Detail</h1>
-                    <p>Menampilkan status setiap perangkat per kapal untuk periode terpilih</p>
+                    <h1>Laporan Detail</h1>
+                    <p>Lihat seluruh riwayat data per periode</p>
                 </div>
             </div>
+            <div style="display: flex; gap: 0.5rem;">
+                <button onclick="exportCSV()" class="btn btn-secondary">
+                    <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                    </svg>
+                    Export CSV
+                </button>
+            </div>
+        </header>
 
-            <form action="/report" method="get" class="filter-form" style="display: flex; gap: 1rem; align-items: end;">
-                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-                    <label
-                        style="font-size: 11px; font-weight: 600; color: var(--slate-500); text-transform: uppercase;">Project
-                        Code</label>
-                    <select name="project" class="form-input" style="padding: 0.5rem; min-width: 100px; height: 38px;">
+        <!-- Filter Section -->
+        <div class="filter-section">
+            <form action="/report" method="GET" style="display: contents;">
+                <div class="filter-group">
+                    <label class="filter-label">Project Code</label>
+                    <select name="code" class="filter-select" onchange="this.form.submit()">
+                        <option value="">All Projects</option>
                         {{ range .Projects }}
-                        <option value="{{ . }}" {{ if eq . (or $.CurrentProject "FMS" ) }}selected{{ end }}>{{ . }}
+                        <option value="{{ .Code }}" {{ if eq $.SelectedCode .Code }}selected{{ end }}>{{ .Name }}
                         </option>
                         {{ end }}
                     </select>
                 </div>
-                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-                    <label
-                        style="font-size: 11px; font-weight: 600; color: var(--slate-500); text-transform: uppercase;">Period</label>
-                    <input type="month" name="date" class="form-input" required style="padding: 0.5rem;">
+                <div class="filter-group">
+                    <label class="filter-label">Tanggal Mulai</label>
+                    <input type="date" name="start_date" class="filter-select" value="{{ .StartDate }}">
                 </div>
-                <button type="submit" class="btn btn-primary" style="height: 38px;">Filter</button>
+                <div class="filter-group">
+                    <label class="filter-label">Tanggal Akhir</label>
+                    <input type="date" name="end_date" class="filter-select" value="{{ .EndDate }}">
+                </div>
+                <div class="filter-group" style="flex: 0;">
+                    <label class="filter-label">&nbsp;</label>
+                    <button type="submit" class="btn btn-primary">
+                        <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z">
+                            </path>
+                        </svg>
+                        Filter
+                    </button>
+                </div>
             </form>
-        </header>
+        </div>
 
-        <!-- Report Content -->
-        <div class="card" style="padding: 0; overflow: hidden;">
-            <div
-                style="padding: 1.5rem; border-bottom: 1px solid var(--slate-100); background: #f8fafc; display: flex; justify-content: space-between; align-items: center;">
-                <h2 style="font-size: 16px; font-weight: 600; margin: 0;">Periode: <span
-                        style="color: var(--primary-600);">{{ .Code }}</span></h2>
-                <div class="badge badge-online">{{ len .Reports }} Records Found</div>
+        <!-- Summary Stats -->
+        {{ if .Reports }}
+        <div class="stats-grid" style="margin-bottom: 1.5rem;">
+            <div class="stat-card total">
+                <span class="stat-value">{{ .TotalReports }}</span>
+                <span class="stat-label">Total Entries</span>
             </div>
+            <div class="stat-card online">
+                <span class="stat-value">{{ .TotalOnline }}</span>
+                <span class="stat-label">Sensors Online</span>
+            </div>
+            <div class="stat-card offline">
+                <span class="stat-value">{{ .TotalOffline }}</span>
+                <span class="stat-label">Sensors Offline</span>
+            </div>
+            <div class="stat-card" style="--stat-color: var(--primary-600);">
+                <span class="stat-value" style="color: var(--primary-600);">{{ printf "%.1f" .AvgOnlineRate }}%</span>
+                <span class="stat-label">Avg Online Rate</span>
+            </div>
+        </div>
+        {{ end }}
 
-            <div style="overflow-x: auto;">
-                <table class="data-table">
+        <!-- Data Table -->
+        <div class="card" style="padding: 0; overflow: hidden;">
+            <div class="table-wrapper" style="border: none; border-radius: 0;">
+                <table class="data-table" id="reportTable">
                     <thead>
                         <tr>
+                            <th style="width: 60px;">No</th>
                             <th>Ship Name</th>
-                            <th>Date</th>
-
-                            <!-- Dynamic Sensor Headers -->
-                            {{ range $.Sensors }}
-                            <th style="text-align: center; white-space: nowrap;">{{ .Name }}</th>
+                            <th style="white-space: nowrap;">Date</th>
+                            <th>Code</th>
+                            {{ range .Sensors }}
+                            <th style="text-align: center;">{{ .Name }}</th>
                             {{ end }}
-
-                            <th style="text-align: center;">Online</th>
-                            <th style="text-align: center;">Offline</th>
                             <th style="text-align: center;">Rate</th>
+                            <th style="text-align: right;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {{ range .Reports }}
-                        <tr>
-                            <td class="ship-name-cell">{{ .ShipName }}</td>
-                            <td style="color: var(--slate-500); white-space: nowrap;">{{ .ReportDate.Format "02 Jan" }}
+                        {{ range $idx, $report := .Reports }}
+                        <tr id="report-row-{{ $report.ID }}">
+                            <td style="color: var(--slate-400);">{{ add $idx 1 }}</td>
+                            <td class="ship-name-cell">{{ $report.ShipName }}</td>
+                            <td style="white-space: nowrap; color: var(--slate-500);">
+                                {{ $report.ReportDate.Format "02 Jan 2006" }}
                             </td>
+                            <td><code>{{ $report.Code }}</code></td>
 
-                            <!-- Dynamic Sensor Cells -->
-                            {{ $report := . }}
                             {{ range $.Sensors }}
-                            {{ $val := lookupSensor $report.SensorsData .Code }}
+                            {{ $sensorStatus := lookupSensor $report.SensorsData .Code }}
                             <td style="text-align: center;">
-                                {{ if eq $val nil }}
-                                <span class="badge badge-disabled">-</span>
-                                {{ else }}
-                                {{ if isTrue $val }}
+                                {{ if eq $sensorStatus nil }}
+                                <span class="badge badge-disabled">N/A</span>
+                                {{ else if isTrue $sensorStatus }}
                                 <span class="badge badge-online">ON</span>
                                 {{ else }}
                                 <span class="badge badge-offline">OFF</span>
                                 {{ end }}
-                                {{ end }}
                             </td>
                             {{ end }}
 
-                            <td style="text-align: center; color: var(--success-600); font-weight: 600;">{{ .OnlineTotal
-                                }}</td>
-                            <td style="text-align: center; color: var(--error-600); font-weight: 600;">{{ .OfflineTotal
-                                }}</td>
                             <td style="text-align: center;">
                                 <span
-                                    class="badge {{ if gt .OnlinePercent 50.0 }}badge-online{{ else }}badge-offline{{ end }}">
-                                    {{ printf "%.0f" .OnlinePercent }}%
+                                    class="badge {{ if gt $report.OnlinePercent 80.0 }}badge-success{{ else if gt $report.OnlinePercent 50.0 }}badge-warning{{ else }}badge-error{{ end }}">
+                                    {{ printf "%.0f" $report.OnlinePercent }}%
                                 </span>
+                            </td>
+                            <td style="text-align: right;">
+                                <div style="display: flex; gap: 0.25rem; justify-content: flex-end;">
+                                    <a href="/reports/{{ $report.ID }}/edit" class="btn btn-ghost btn-icon btn-sm"
+                                        title="Edit">
+                                        <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
+                                            </path>
+                                        </svg>
+                                    </a>
+                                    <button class="btn btn-ghost btn-icon btn-sm delete-btn" data-id="{{ $report.ID }}"
+                                        data-ship="{{ $report.ShipName }}" title="Delete"
+                                        style="color: var(--error-500);">
+                                        <svg style="width: 16px; height: 16px; pointer-events: none;" fill="none"
+                                            stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                            </path>
+                                        </svg>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                         {{ else }}
                         <tr>
-                            <!-- Colspan estimation -->
-                            <td colspan="15" class="empty-state">
-                                <div class="empty-icon">📭</div>
-                                <div>Belum ada data laporan untuk periode {{ $.Code }}</div>
+                            <td colspan="{{ add (len .Sensors) 5 }}" class="empty-state">
+                                <div class="empty-state-icon">
+                                    <svg style="width: 48px; height: 48px; color: var(--slate-300);" fill="none"
+                                        stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                            d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                                        </path>
+                                    </svg>
+                                </div>
+                                <div>No reports found for the selected filter.</div>
+                                <a href="/batch-input" class="btn btn-primary" style="margin-top: 1rem;">
+                                    <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                    </svg>
+                                    Add New Data
+                                </a>
                             </td>
                         </tr>
                         {{ end }}
@@ -123,11 +190,155 @@
             </div>
         </div>
 
-        <!-- Footer -->
-        <footer style="text-align: center; padding: 2rem; color: var(--slate-400); font-size: 13px;">
-            <small>Device Performance Reporting System &copy; 2025</small>
+        <!-- Pagination -->
+        {{ if gt .TotalPages 1 }}
+        <div class="pagination">
+            <div class="pagination-info">
+                Showing {{ .PageStart }} - {{ .PageEnd }} of {{ .TotalReports }} entries
+            </div>
+            <div class="pagination-controls">
+                {{ if gt .Page 1 }}
+                <a href="?page={{ sub .Page 1 }}&code={{ .SelectedCode }}&start_date={{ .StartDate }}&end_date={{ .EndDate }}"
+                    class="page-btn">
+                    <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7">
+                        </path>
+                    </svg>
+                </a>
+                {{ else }}
+                <span class="page-btn" disabled>
+                    <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7">
+                        </path>
+                    </svg>
+                </span>
+                {{ end }}
+
+                {{ range .PageNumbers }}
+                <a href="?page={{ . }}&code={{ $.SelectedCode }}&start_date={{ $.StartDate }}&end_date={{ $.EndDate }}"
+                    class="page-btn {{ if eq . $.Page }}active{{ end }}">{{ . }}</a>
+                {{ end }}
+
+                {{ if lt .Page .TotalPages }}
+                <a href="?page={{ add .Page 1 }}&code={{ .SelectedCode }}&start_date={{ .StartDate }}&end_date={{ .EndDate }}"
+                    class="page-btn">
+                    <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7">
+                        </path>
+                    </svg>
+                </a>
+                {{ else }}
+                <span class="page-btn" disabled>
+                    <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7">
+                        </path>
+                    </svg>
+                </span>
+                {{ end }}
+            </div>
+        </div>
+        {{ end }}
+
+        <footer class="footer">
+            <small>Fleet Management System &copy; 2026</small>
         </footer>
     </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Delete Report</h3>
+                <button class="modal-close" onclick="closeDeleteModal()">
+                    <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning" style="margin-bottom: 0;">
+                    <svg class="alert-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                        </path>
+                    </svg>
+                    <div class="alert-content">
+                        <div class="alert-title">Confirm Deletion</div>
+                        Are you sure you want to delete this report for <strong id="deleteShipName"></strong>?
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+                <form id="deleteForm" method="POST" style="margin: 0;">
+                    <button type="submit" class="btn btn-danger">Delete Report</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        Toast.init();
+
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest('.delete-btn');
+            if (btn) {
+                const id = btn.dataset.id;
+                const shipName = btn.dataset.ship;
+
+                document.getElementById('deleteShipName').textContent = shipName;
+                document.getElementById('deleteForm').action = '/report/' + id + '/delete';
+                document.getElementById('deleteModal').classList.add('active');
+            }
+        });
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('active');
+        }
+
+        function exportCSV() {
+            const table = document.getElementById('reportTable');
+            if (!table) return;
+
+            let csv = [];
+            const rows = table.querySelectorAll('tr');
+
+            rows.forEach(row => {
+                const cols = row.querySelectorAll('th, td');
+                const rowData = [];
+                cols.forEach((col, idx) => {
+                    // Skip the Actions column
+                    if (idx < cols.length - 1) {
+                        let text = col.innerText.replace(/"/g, '""');
+                        rowData.push('"' + text + '"');
+                    }
+                });
+                csv.push(rowData.join(','));
+            });
+
+            const csvContent = csv.join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'fms_report_' + new Date().toISOString().slice(0, 10) + '.csv';
+            link.click();
+
+            showToast('Data exported successfully!', 'success');
+        }
+
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) overlay.classList.remove('active');
+            });
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
+            }
+        });
+    </script>
 </body>
 
 </html>

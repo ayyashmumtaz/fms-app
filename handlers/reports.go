@@ -241,6 +241,7 @@ func CreateReport(c *gin.Context) {
 }
 
 // DeleteReport deletes a device report
+// DeleteReport deletes a device report
 func DeleteReport(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
@@ -252,6 +253,12 @@ func DeleteReport(c *gin.Context) {
 	_, err = db.DB.Exec(`DELETE FROM fms_device_reports WHERE id = $1`, id)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error: %v", err)
+		return
+	}
+
+	// Helper: Check if request expects HTML/Redirect (e.g. from a form submit) or just HTMX
+	if c.GetHeader("HX-Request") == "" {
+		c.Redirect(http.StatusSeeOther, "/report?success=Data+dihapus")
 		return
 	}
 
@@ -294,4 +301,225 @@ func UpdateReport(c *gin.Context) {
 	}
 
 	c.String(http.StatusOK, "updated")
+}
+
+// EditReportPage renders the edit form for a report
+func EditReportPage(c *gin.Context) {
+	idStr := c.Param("id")
+	id, _ := strconv.Atoi(idStr)
+
+	// Fetch Report Data
+	var r DeviceReport
+	var sensorsDataJSON []byte
+	err := db.DB.QueryRow(`
+		SELECT id, code, report_date, ship_name,
+		       device_condition, gps, rpm_me_port, rpm_me_stbd,
+		       flowmeter_input, flowmeter_output, flowmeter_bunker,
+		       sensors_data
+		FROM fms_device_reports WHERE id = $1`, id).Scan(
+		&r.ID, &r.Code, &r.ReportDate, &r.ShipName,
+		&r.DeviceCondition, &r.GPS, &r.RpmMEPort, &r.RpmMEStbd,
+		&r.FlowmeterInput, &r.FlowmeterOutput, &r.FlowmeterBunker,
+		&sensorsDataJSON,
+	)
+	if err != nil {
+		c.String(http.StatusNotFound, "Report not found")
+		return
+	}
+
+	// Unmarshal sensors data
+	json.Unmarshal(sensorsDataJSON, &r.SensorsData)
+
+	// Fetch Ships for dropdown
+	rowsShips, _ := db.DB.Query("SELECT id, name FROM fms_ships ORDER BY name ASC")
+	var ships []struct {
+		ID   int
+		Name string
+	}
+	defer rowsShips.Close()
+	for rowsShips.Next() {
+		var s struct {
+			ID   int
+			Name string
+		}
+		rowsShips.Scan(&s.ID, &s.Name)
+		ships = append(ships, s)
+	}
+
+	// Fetch Projects
+	rowsProjects, _ := db.DB.Query("SELECT code, name FROM fms_projects WHERE is_active = true ORDER BY name ASC")
+	var projects []struct {
+		Code string
+		Name string
+	}
+	defer rowsProjects.Close()
+	for rowsProjects.Next() {
+		var p struct {
+			Code string
+			Name string
+		}
+		rowsProjects.Scan(&p.Code, &p.Name)
+		projects = append(projects, p)
+	}
+
+	// Helper to split code to get project code (Code format: PROJECT SHIP PERIOD)
+	parts := strings.Split(r.Code, " ")
+	projectCode := ""
+	if len(parts) > 0 {
+		projectCode = parts[0]
+	}
+
+	// Fetch Ship ID
+	var currentShipID int
+	db.DB.QueryRow("SELECT id FROM fms_ships WHERE name = $1", r.ShipName).Scan(&currentShipID)
+
+	// Fetch Sensors
+	var sensors []struct {
+		Code string
+		Name string
+		IsOn bool
+	}
+
+	if currentShipID != 0 {
+		query := `
+			SELECT DISTINCT g.code, g.name
+			FROM fms_sensor_config g
+			LEFT JOIN fms_ship_sensors s ON g.code = s.sensor_code AND s.ship_id = $1
+			WHERE 
+				(g.is_active = true AND (s.is_active IS NULL OR s.is_active = true)) 
+				OR (s.is_active = true)
+			ORDER BY g.display_order ASC
+		`
+		rows, err := db.DB.Query(query, currentShipID)
+		if err == nil {
+			defer rows.Close()
+			for rows.Next() {
+				var code, name string
+				rows.Scan(&code, &name)
+				isOn := false
+				if val, ok := r.SensorsData[code]; ok {
+					isOn = val
+				}
+				sensors = append(sensors, struct {
+					Code string
+					Name string
+					IsOn bool
+				}{code, name, isOn})
+			}
+		}
+	} else {
+		// Fallback
+		rows, err := db.DB.Query("SELECT code, name FROM fms_sensor_config WHERE is_active = true ORDER BY display_order ASC")
+		if err == nil {
+			defer rows.Close()
+			for rows.Next() {
+				var code, name string
+				rows.Scan(&code, &name)
+				isOn := false
+				if val, ok := r.SensorsData[code]; ok {
+					isOn = val
+				}
+				sensors = append(sensors, struct {
+					Code string
+					Name string
+					IsOn bool
+				}{code, name, isOn})
+			}
+		}
+	}
+
+	// Render
+	c.HTML(http.StatusOK, "report_edit.html", gin.H{
+		"Report":          r,
+		"Ships":           ships,
+		"Projects":        projects,
+		"ProjectCode":     projectCode,
+		"CurrentShipID":   currentShipID,
+		"Sensors":         sensors,
+		"FormattedDate":   r.ReportDate.Format("2006-01-02"),
+		"FormattedPeriod": r.ReportDate.Format("2006-01"),
+	})
+}
+
+// UpdateReportFull handles the full form update
+func UpdateReportFull(c *gin.Context) {
+	idStr := c.Param("id")
+	id, _ := strconv.Atoi(idStr)
+
+	// Logic similar to CreateReport but UPDATE
+	// Note: We might want to re-generate the code if project/ship/period changes?
+	// For simplicity, let's keep the code as is or update it if needed.
+	// User request didn't specify, but safer to assume they might fix details.
+
+	projectCode := c.PostForm("project_code")
+	periodStr := c.PostForm("report_period") // YYYY-MM
+	reportDateStr := c.PostForm("report_date")
+	shipID := c.PostForm("ship_id")
+	shipName := c.PostForm("ship_name")
+
+	// Resolve ship name if ID provided
+	var shipCode string
+	if shipID != "" {
+		var name string
+		if err := db.DB.QueryRow("SELECT name, code FROM fms_ships WHERE id = $1", shipID).Scan(&name, &shipCode); err == nil {
+			shipName = name
+		}
+	}
+
+	// Construct New Code
+	newCode := ""
+	if projectCode != "" && periodStr != "" {
+		periodDate, err := time.Parse("2006-01", periodStr)
+		if err == nil {
+			newCode = fmt.Sprintf("%s %s %s", projectCode, shipCode, periodDate.Format("Jan 2006"))
+			newCode = strings.TrimSpace(newCode)
+		}
+	}
+
+	reportDate, _ := time.Parse("2006-01-02", reportDateStr)
+
+	// Parse Sensors
+	sensorsData := make(map[string]bool)
+	form := c.Request.PostForm
+	// Legacy vars
+	var deviceCondition, gps, rpmMEPort, rpmMEStbd, flowmeterInput, flowmeterOutput, flowmeterBunker bool
+	legacyMap := map[string]*bool{
+		"device_condition": &deviceCondition,
+		"gps":              &gps,
+		"rpm_me_port":      &rpmMEPort,
+		"rpm_me_stbd":      &rpmMEStbd,
+		"flowmeter_input":  &flowmeterInput,
+		"flowmeter_output": &flowmeterOutput,
+		"flowmeter_bunker": &flowmeterBunker,
+	}
+
+	for key, values := range form {
+		if strings.HasPrefix(key, "sensor_") && len(values) > 0 {
+			code := strings.TrimPrefix(key, "sensor_")
+			isOn := values[0] == "on"
+			sensorsData[code] = isOn
+			if ptr, ok := legacyMap[code]; ok {
+				*ptr = isOn
+			}
+		}
+	}
+
+	jsonData, _ := json.Marshal(sensorsData)
+
+	// Update Query
+	_, err := db.DB.Exec(`
+		UPDATE fms_device_reports 
+		SET code=$1, report_date=$2, ship_name=$3, 
+		    device_condition=$4, gps=$5, rpm_me_port=$6, rpm_me_stbd=$7, 
+			flowmeter_input=$8, flowmeter_output=$9, flowmeter_bunker=$10, 
+			sensors_data=$11, updated_at=CURRENT_TIMESTAMP
+		WHERE id=$12
+	`, newCode, reportDate, shipName, deviceCondition, gps, rpmMEPort, rpmMEStbd, flowmeterInput, flowmeterOutput, flowmeterBunker, jsonData, id)
+
+	if err != nil {
+		c.Redirect(http.StatusSeeOther, fmt.Sprintf("/reports/%d/edit?error=Update+failed", id))
+		return
+	}
+
+	c.Redirect(http.StatusSeeOther, "/report?success=Laporan+berhasil+diupdate!+✅")
 }
