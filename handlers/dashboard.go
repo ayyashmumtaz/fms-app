@@ -398,18 +398,14 @@ func MonthlyReport(c *gin.Context) {
 	}
 
 	// Get active projects for filter dropdown
-	type ProjectData struct {
-		Code string
-		Name string
-	}
-	var projects []ProjectData
-	pRows, err := db.DB.Query("SELECT code, name FROM fms_projects WHERE is_active = true ORDER BY code ASC")
+	var projects []string
+	pRows, err := db.DB.Query("SELECT code FROM fms_projects WHERE is_active = true ORDER BY code ASC")
 	if err == nil {
 		defer pRows.Close()
 		for pRows.Next() {
-			var p ProjectData
-			if err := pRows.Scan(&p.Code, &p.Name); err == nil {
-				projects = append(projects, p)
+			var pCode string
+			if err := pRows.Scan(&pCode); err == nil {
+				projects = append(projects, pCode)
 			}
 		}
 	}
@@ -420,10 +416,8 @@ func MonthlyReport(c *gin.Context) {
 		"Codes":          codes,
 		"Sensors":        sensors,
 		"Projects":       projects,
-		"CurrentProject": project,
+		"CurrentProject": project, // Added current project for selection state
 		"ActiveTab":      "report",
 		"Logo":           GetCompanyLogo(),
-		"TotalPages":     1, // Prevent template error
-		"Page":           1, // Prevent template error
 	})
 }
